@@ -235,49 +235,39 @@ function showResults() {
   document.getElementById('quiz-questions').classList.add('d-none');
   document.getElementById('quiz-results').classList.remove('d-none');
 
-  const recommendations = getRecommendations();
-  renderRecommendations(recommendations);
+  const results = getResultCount();
+
+  renderResults(results);
 }
 
 function getRecommendations() {
-  let filtered = [...allApartments];
+  let filtered = allApartments;
 
   if (answers.canton) {
-    filtered = filtered.filter(item => item.canton === answers.canton);
-  }
-
-  if (answers.budget) {
-    filtered = filtered.filter(item => item.price_range === answers.budget);
+    filtered = filtered.filter(
+      a => a[CONFIG.COLUMNS.canton] === answers.canton
+    );
   }
 
   if (answers.rooms) {
-    filtered = filtered.filter(item => item.rooms === answers.rooms);
+    filtered = filtered.filter(
+      a => a[CONFIG.COLUMNS.rooms] == answers.rooms
+    );
+  }
+
+  if (answers.budget) {
+    filtered = filtered.filter(
+      a => parseInt(a[CONFIG.COLUMNS.price_range]) <= parseInt(answers.budget)
+    );
   }
 
   if (answers.area) {
-    filtered = filtered.filter(item => item.area_m2_range === answers.area);
+    filtered = filtered.filter(
+      a => parseInt(a[CONFIG.COLUMNS.area_m2_range]) <= parseInt(answers.area)
+    );
   }
 
-  if (answers.year) {
-    filtered = filtered.filter(item => item.year === answers.year);
-  }
-
-  switch (answers.priority) {
-    case 'common':
-      filtered.sort((a, b) => b.value - a.value);
-      break;
-    case 'cheap':
-      filtered.sort((a, b) => comparePriceRanges(a.price_range, b.price_range));
-      break;
-    case 'large':
-      filtered.sort((a, b) => compareAreaRanges(b.area_m2_range, a.area_m2_range));
-      break;
-    default:
-      filtered.sort((a, b) => b.value - a.value);
-      break;
-  }
-
-  return filtered.slice(0, 5);
+  return filtered;
 }
 
 function comparePriceRanges(a, b) {
@@ -331,34 +321,43 @@ function getAreaOrder(areaRange) {
   return index === -1 ? 999 : index;
 }
 
-function renderRecommendations(recommendations) {
-  if (recommendations.length === 0) {
+function renderResults(results) {
+
+  if (results.length === 0) {
+
     document.getElementById('recommendations').innerHTML = `
-      <div class="empty-state">
-        <h4>Keine passenden Ergebnisse gefunden</h4>
-        <p>Versuche es mit anderen Antworten.</p>
+      <div class="card p-4 text-center">
+        <h4 class="text-danger">Keine Wohnungen gefunden</h4>
+        <p class="text-muted">
+          Für diese Kombination gibt es laut Statistik keine Mietwohnungen.
+        </p>
+
+        <button class="btn btn-primary mt-3" onclick="restartQuiz()">
+          Quiz erneut starten
+        </button>
       </div>
     `;
+
     return;
   }
 
-  const html = recommendations.map(item => `
-    <div class="card mb-3">
-      <div class="card-body">
-        <h5 class="card-title">${item.canton}</h5>
-        <p class="mb-1"><strong>Zimmer:</strong> ${item.rooms}</p>
-        <p class="mb-1"><strong>Mietpreisklasse:</strong> ${item.price_range}</p>
-        <p class="mb-1"><strong>Wohnungsfläche:</strong> ${item.area_m2_range}</p>
-        <p class="mb-1"><strong>Jahr:</strong> ${item.year}</p>
-        <p class="mb-2"><strong>Anzahl Wohnungen:</strong> ${Number(item.value).toLocaleString('de-CH')}</p>
-        <p class="text-muted small mb-0">
-          Diese Kategorie passt zu deinen Angaben und zeigt, wie viele Mietwohnungen in dieser Kombination erfasst wurden.
-        </p>
-      </div>
-    </div>
-  `).join('');
+  const total = results.reduce((sum, r) => sum + (r.value || 0), 0);
 
-  document.getElementById('recommendations').innerHTML = html;
+  document.getElementById('recommendations').innerHTML = `
+    <div class="card p-4 text-center mb-4">
+
+      <h2 class="text-primary">${total.toLocaleString("de-CH")}</h2>
+
+      <p class="mb-0">
+        Mietwohnungen entsprechen deiner Auswahl
+      </p>
+
+    </div>
+
+    <div class="small text-muted text-center">
+      Ergebnisse basieren auf statistischen Kategorien.
+    </div>
+  `;
 }
 
 function restartQuiz() {

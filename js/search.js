@@ -1,7 +1,7 @@
 let allApartments = [];
 let filteredApartments = [];
 let currentPage = 1;
-const itemsPerPage = 12;
+const itemsPerPage = 30;
 let viewMode = 'cards';
 
 async function initSearch() {
@@ -85,6 +85,7 @@ function applyFilters() {
   const filters = getFilterValues();
 
   filteredApartments = allApartments.filter(item => {
+    if ((Number(item.value) || 0) <= 0) return false;
     if (filters.canton && item.canton !== filters.canton) return false;
     if (filters.rooms && item.rooms !== filters.rooms) return false;
     if (filters.price_range && item.price_range !== filters.price_range) return false;
@@ -155,15 +156,34 @@ function renderResults() {
 
 function renderCards(items) {
   const html = items.map(item => `
-    <div class="col-md-6 col-lg-4 mb-4">
-      <div class="card h-100">
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">${item.canton}</h5>
-          <p class="card-text mb-1"><strong>Zimmer:</strong> ${item.rooms}</p>
-          <p class="card-text mb-1"><strong>Mietpreisklasse:</strong> ${item.price_range}</p>
-          <p class="card-text mb-1"><strong>Wohnungsfläche:</strong> ${item.area_m2_range}</p>
-          <p class="card-text mb-1"><strong>Jahr:</strong> ${item.year}</p>
-          <p class="card-text mt-2"><strong>Anzahl Wohnungen:</strong> ${item.value}</p>
+    <div class="col-md-6 col-xl-4 mb-4">
+      <div class="card result-card h-100 border-0 shadow-sm">
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h5 class="card-title mb-1 fw-bold">${item.canton}</h5>
+              <span class="badge bg-primary-subtle text-primary border">${item.year}</span>
+            </div>
+            <div class="text-end">
+              <div class="small text-muted">Anzahl</div>
+              <div class="fs-5 fw-bold text-primary">${Number(item.value).toLocaleString('de-CH')}</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="mb-2"><strong>Zimmer:</strong> ${item.rooms}</div>
+            <div class="mb-2"><strong>Mietpreisklasse:</strong> ${item.price_range}</div>
+            <div class="mb-2"><strong>Wohnungsfläche:</strong> ${item.area_m2_range}</div>
+          </div>
+
+          <div class="mt-auto d-flex gap-2 flex-wrap">
+            <button class="btn btn-outline-primary btn-sm" onclick="toggleFavorite(${item.id})">
+              ${Utils.isFavorite(item.id) ? '★ Favorit' : '☆ Favorit'}
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="addToComparison(${item.id})">
+              Vergleichen
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -207,30 +227,108 @@ function renderTable(items) {
 
 function renderPagination() {
   const totalPages = Math.ceil(filteredApartments.length / itemsPerPage);
+  const paginationNav = document.getElementById('pagination-nav');
 
   if (totalPages <= 1) {
-    document.getElementById('pagination-nav').innerHTML = '';
+    paginationNav.innerHTML = '';
     return;
   }
 
-  let html = '<ul class="pagination justify-content-center">';
+  let html = '<ul class="pagination justify-content-center flex-wrap gap-2">';
 
-  for (let i = 1; i <= totalPages; i++) {
-    html += `
-      <li class="page-item ${i === currentPage ? 'active' : ''}">
-        <a class="page-link" href="#" onclick="goToPage(${i}); return false;">${i}</a>
-      </li>
-    `;
-  }
+  html += `
+    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+      <a class="page-link rounded-pill px-3" href="#" onclick="goToPage(${currentPage - 1}); return false;">
+        ← Zurück
+      </a>
+    </li>
+  `;
+
+  const pages = getVisiblePages(currentPage, totalPages);
+
+  pages.forEach(page => {
+    if (page === '...') {
+      html += `
+        <li class="page-item disabled">
+          <span class="page-link rounded-pill px-3">...</span>
+        </li>
+      `;
+    } else {
+      html += `
+        <li class="page-item ${page === currentPage ? 'active' : ''}">
+          <a class="page-link rounded-pill px-3" href="#" onclick="goToPage(${page}); return false;">
+            ${page}
+          </a>
+        </li>
+      `;
+    }
+  });
+
+  html += `
+    <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+      <a class="page-link rounded-pill px-3" href="#" onclick="goToPage(${currentPage + 1}); return false;">
+        Weiter →
+      </a>
+    </li>
+  `;
 
   html += '</ul>';
-  document.getElementById('pagination-nav').innerHTML = html;
+
+  paginationNav.innerHTML = `
+    <div class="d-flex flex-column align-items-center mt-4">
+      <div class="text-muted small mb-2">
+        Seite ${currentPage} von ${totalPages}
+      </div>
+      ${html}
+    </div>
+  `;
+}
+
+function getVisiblePages(current, total) {
+  const pages = [];
+
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  pages.push(1);
+
+  if (current > 3) {
+    pages.push('...');
+  }
+
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (current < total - 2) {
+    pages.push('...');
+  }
+
+  pages.push(total);
+
+  return pages;
 }
 
 function goToPage(page) {
+  const totalPages = Math.ceil(filteredApartments.length / itemsPerPage);
+
+  if (page < 1 || page > totalPages) return;
+
   currentPage = page;
   renderResults();
   renderPagination();
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
 }
 
 document.addEventListener('DOMContentLoaded', initSearch);
