@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
@@ -52,92 +54,50 @@
           <div class="card-body">
             <form id="filter-form">
               <div class="mb-3">
-                <label for="search-input" class="form-label">Search</label>
-                <input type="text" class="form-control" id="search-input" placeholder="Title, city...">
-              </div>
-              <div class="mb-3">
-                <label for="canton-select" class="form-label">Canton</label>
+                <label for="canton-select" class="form-label">Kanton</label>
                 <select class="form-select" id="canton-select">
-                  <option value="">All</option>
+                  <option value="">Alle</option>
                 </select>
               </div>
+
               <div class="mb-3">
-                <label for="city-select" class="form-label">City</label>
-                <select class="form-select" id="city-select">
-                  <option value="">All</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label for="zip-input" class="form-label">ZIP Code</label>
-                <input type="text" class="form-control" id="zip-input">
-              </div>
-              <div class="row">
-                <div class="col-6">
-                  <label for="min-price" class="form-label">Min Price</label>
-                  <input type="number" class="form-control" id="min-price">
-                </div>
-                <div class="col-6">
-                  <label for="max-price" class="form-label">Max Price</label>
-                  <input type="number" class="form-control" id="max-price">
-                </div>
-              </div>
-              <div class="row mt-3">
-                <div class="col-6">
-                  <label for="min-area" class="form-label">Min Area</label>
-                  <input type="number" class="form-control" id="min-area">
-                </div>
-                <div class="col-6">
-                  <label for="max-area" class="form-label">Max Area</label>
-                  <input type="number" class="form-control" id="max-area">
-                </div>
-              </div>
-              <div class="mb-3 mt-3">
-                <label for="rooms-select" class="form-label">Rooms</label>
+                <label for="rooms-select" class="form-label">Zimmer</label>
                 <select class="form-select" id="rooms-select">
-                  <option value="">All</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5+">5+</option>
+                  <option value="">Alle</option>
                 </select>
               </div>
+
               <div class="mb-3">
-                <label for="property-type-select" class="form-label">Property Type</label>
-                <select class="form-select" id="property-type-select">
-                  <option value="">All</option>
+                <label for="price-select" class="form-label">Mietpreisklasse</label>
+                <select class="form-select" id="price-select">
+                  <option value="">Alle</option>
                 </select>
               </div>
+
               <div class="mb-3">
-                <label for="sort-select" class="form-label">Sort by</label>
+                <label for="area-select" class="form-label">Wohnungsfläche</label>
+                <select class="form-select" id="area-select">
+                  <option value="">Alle</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="year-select" class="form-label">Jahr</label>
+                <select class="form-select" id="year-select">
+                  <option value="">Alle</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="sort-select" class="form-label">Sortieren nach</label>
                 <select class="form-select" id="sort-select">
-                  <option value="">Default</option>
-                  <option value="price_asc">Price ascending</option>
-                  <option value="price_desc">Price descending</option>
-                  <option value="area_asc">Area ascending</option>
-                  <option value="area_desc">Area descending</option>
-                  <option value="rooms">Number of rooms</option>
-                  <option value="newest">Newest first</option>
+                  <option value="">Standard</option>
+                  <option value="value_desc">Anzahl absteigend</option>
+                  <option value="value_asc">Anzahl aufsteigend</option>
+                  <option value="canton_asc">Kanton A-Z</option>
                 </select>
               </div>
-              <div class="mb-3">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="furnished-check">
-                  <label class="form-check-label" for="furnished-check">Furnished</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="balcony-check">
-                  <label class="form-check-label" for="balcony-check">Balcony</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="pets-check">
-                  <label class="form-check-label" for="pets-check">Pets allowed</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="transport-check">
-                  <label class="form-check-label" for="transport-check">Public transport nearby</label>
-                </div>
-              </div>
+              <button type="button" id="reset-filters" class="btn btn-outline-secondary btn-sm">Zurücksetzen</button>
             </form>
           </div>
         </div>
@@ -182,4 +142,5 @@
   <script src="js/utils.js"></script>
   <script src="js/search.js"></script>
 </body>
+
 </html>

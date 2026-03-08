@@ -1,4 +1,3 @@
-// Quiz functionality
 let allApartments = [];
 let currentQuestion = 0;
 let answers = {};
@@ -8,136 +7,120 @@ const questions = [
     id: 'canton',
     question: 'In welchem Kanton möchtest du wohnen?',
     type: 'select',
-    options: [] // Will be populated from data
-  },
-  {
-    id: 'location_type',
-    question: 'Bevorzugst du Stadt oder Land?',
-    type: 'radio',
-    options: [
-      { value: 'stadt', label: 'Stadt' },
-      { value: 'land', label: 'Land' },
-      { value: 'egal', label: 'Egal' }
-    ]
+    options: []
   },
   {
     id: 'budget',
-    question: 'Was ist dein monatliches Budget?',
+    question: 'Welche Mietpreisklasse passt am besten zu deinem Budget?',
     type: 'select',
     options: [
-      { value: '800', label: 'Bis 800 CHF' },
-      { value: '1200', label: 'Bis 1200 CHF' },
-      { value: '1600', label: 'Bis 1600 CHF' },
-      { value: '2000', label: 'Bis 2000 CHF' },
-      { value: '2500', label: 'Über 2000 CHF' }
+      { value: 'unter 400 Fr.', label: 'Unter 400 Fr.' },
+      { value: '400 - 599 Fr.', label: '400 - 599 Fr.' },
+      { value: '600 - 799 Fr.', label: '600 - 799 Fr.' },
+      { value: '800 - 999 Fr.', label: '800 - 999 Fr.' },
+      { value: '1000 - 1199 Fr.', label: '1000 - 1199 Fr.' },
+      { value: '1200 - 1399 Fr.', label: '1200 - 1399 Fr.' },
+      { value: '1400 - 1599 Fr.', label: '1400 - 1599 Fr.' },
+      { value: '1600 - 1799 Fr.', label: '1600 - 1799 Fr.' },
+      { value: '1800 - 1999 Fr.', label: '1800 - 1999 Fr.' },
+      { value: '2000 - 2399 Fr.', label: '2000 - 2399 Fr.' },
+      { value: '2400 Fr. und +', label: '2400 Fr. und +' }
     ]
   },
   {
     id: 'rooms',
     question: 'Wie viele Zimmer brauchst du?',
     type: 'select',
-    options: [
-      { value: '1', label: '1 Zimmer' },
-      { value: '2', label: '2 Zimmer' },
-      { value: '3', label: '3 Zimmer' },
-      { value: '4', label: '4 Zimmer' },
-      { value: '5', label: '5+ Zimmer' }
-    ]
+    options: []
   },
   {
     id: 'area',
-    question: 'Wie groß soll die Wohnung sein?',
+    question: 'Welche Wohnungsfläche suchst du ungefähr?',
     type: 'select',
-    options: [
-      { value: '30', label: 'Bis 30 m²' },
-      { value: '50', label: 'Bis 50 m²' },
-      { value: '70', label: 'Bis 70 m²' },
-      { value: '100', label: 'Bis 100 m²' },
-      { value: '150', label: 'Über 100 m²' }
-    ]
+    options: []
   },
   {
-    id: 'balcony',
-    question: 'Möchtest du einen Balkon?',
-    type: 'radio',
-    options: [
-      { value: 'true', label: 'Ja' },
-      { value: 'false', label: 'Nein' },
-      { value: 'egal', label: 'Egal' }
-    ]
-  },
-  {
-    id: 'pets',
-    question: 'Brauchst du Haustiere erlaubt?',
-    type: 'radio',
-    options: [
-      { value: 'true', label: 'Ja' },
-      { value: 'false', label: 'Nein' },
-      { value: 'egal', label: 'Egal' }
-    ]
-  },
-  {
-    id: 'transport',
-    question: 'Ist Nähe zu öffentlichen Verkehrsmitteln wichtig?',
-    type: 'radio',
-    options: [
-      { value: 'true', label: 'Ja' },
-      { value: 'false', label: 'Nein' },
-      { value: 'egal', label: 'Egal' }
-    ]
-  },
-  {
-    id: 'furnished',
-    question: 'Möchtest du möbliert oder unmöbliert?',
-    type: 'radio',
-    options: [
-      { value: 'true', label: 'Möbliert' },
-      { value: 'false', label: 'Unmöbliert' },
-      { value: 'egal', label: 'Egal' }
-    ]
+    id: 'year',
+    question: 'Für welches Jahr möchtest du die Statistik sehen?',
+    type: 'select',
+    options: []
   },
   {
     id: 'priority',
     question: 'Was ist dir am wichtigsten?',
     type: 'radio',
     options: [
-      { value: 'price', label: 'Günstiger Preis' },
-      { value: 'area', label: 'Große Fläche' },
-      { value: 'location', label: 'Gute Lage' },
-      { value: 'modern', label: 'Moderne Ausstattung' },
-      { value: 'family', label: 'Familienfreundlich' }
+      { value: 'common', label: 'Viele verfügbare Wohnungen' },
+      { value: 'cheap', label: 'Möglichst günstige Mietpreisklasse' },
+      { value: 'large', label: 'Grössere Wohnungsfläche' }
     ]
   }
 ];
 
 async function initQuiz() {
   showLoading();
-  allApartments = await fetchApartments();
-  hideLoading();
-  if (allApartments.length === 0) {
-    showError('Keine Daten verfügbar.');
-    return;
+
+  try {
+    allApartments = await fetchApartments();
+    hideLoading();
+
+    if (!allApartments || allApartments.length === 0) {
+      showError('Keine Daten verfügbar.');
+      return;
+    }
+
+    populateDynamicOptions();
+    setupEventListeners();
+  } catch (error) {
+    console.error('Quiz init error:', error);
+    showError('Fehler beim Laden der Daten.');
   }
-  populateCantonOptions();
-  setupEventListeners();
 }
 
 function showLoading() {
-  document.getElementById('quiz-intro').innerHTML += '<div class="mt-3"><div class="loading-spinner"></div> Lade Daten...</div>';
+  document.getElementById('quiz-intro').innerHTML +=
+    '<div class="mt-3"><div class="loading-spinner"></div> Daten werden geladen...</div>';
 }
 
 function hideLoading() {
   const loading = document.querySelector('.loading-spinner');
-  if (loading) loading.parentElement.remove();
+  if (loading && loading.parentElement) {
+    loading.parentElement.remove();
+  }
 }
 
 function showError(message) {
-  document.getElementById('quiz-container').innerHTML = `<div class="alert alert-danger">${message}</div>`;
+  document.getElementById('quiz-container').innerHTML =
+    `<div class="alert alert-danger">${message}</div>`;
 }
 
-function populateCantonOptions() {
-  const cantons = Utils.getUniqueValues(allApartments, CONFIG.COLUMNS.canton);
-  questions[0].options = cantons.map(canton => ({ value: canton, label: canton }));
+function populateDynamicOptions() {
+  const cantons = [...new Set(allApartments.map(item => item.canton))].sort();
+  const rooms = [...new Set(allApartments.map(item => item.rooms))].sort((a, b) =>
+    a.localeCompare(b, 'de', { numeric: true })
+  );
+  const areas = [...new Set(allApartments.map(item => item.area_m2_range))];
+  const years = [...new Set(allApartments.map(item => item.year))].sort();
+
+  questions.find(q => q.id === 'canton').options = cantons.map(canton => ({
+    value: canton,
+    label: canton
+  }));
+
+  questions.find(q => q.id === 'rooms').options = rooms.map(room => ({
+    value: room,
+    label: room
+  }));
+
+  questions.find(q => q.id === 'area').options = areas.map(area => ({
+    value: area,
+    label: area
+  }));
+
+  questions.find(q => q.id === 'year').options = years.map(year => ({
+    value: year,
+    label: year
+  }));
 }
 
 function setupEventListeners() {
@@ -151,6 +134,8 @@ function setupEventListeners() {
 function startQuiz() {
   document.getElementById('quiz-intro').classList.add('d-none');
   document.getElementById('quiz-questions').classList.remove('d-none');
+  document.getElementById('quiz-results').classList.add('d-none');
+
   currentQuestion = 0;
   answers = {};
   renderQuestion();
@@ -159,39 +144,43 @@ function startQuiz() {
 function renderQuestion() {
   const question = questions[currentQuestion];
   const progress = ((currentQuestion + 1) / questions.length) * 100;
+
   document.getElementById('progress-fill').style.width = `${progress}%`;
 
   let optionsHtml = '';
+
   if (question.type === 'select') {
-    optionsHtml = `<select class="form-select" id="question-answer">
-      <option value="">Bitte wählen</option>
-      ${question.options.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}
-    </select>`;
+    optionsHtml = `
+      <select class="form-select" id="question-answer">
+        <option value="">Bitte auswählen</option>
+        ${question.options.map(option => `
+          <option value="${option.value}">${option.label}</option>
+        `).join('')}
+      </select>
+    `;
   } else if (question.type === 'radio') {
     optionsHtml = question.options.map(option => `
-      <div class="form-check">
+      <div class="form-check mb-2">
         <input class="form-check-input" type="radio" name="question-answer" id="${option.value}" value="${option.value}">
         <label class="form-check-label" for="${option.value}">${option.label}</label>
       </div>
     `).join('');
   }
 
-  const html = `
+  document.getElementById('question-container').innerHTML = `
     <h4>${question.question}</h4>
     <div class="mt-4">
       ${optionsHtml}
     </div>
   `;
 
-  document.getElementById('question-container').innerHTML = html;
-
-  // Set previous answer if exists
   const prevAnswer = answers[question.id];
   if (prevAnswer) {
     if (question.type === 'select') {
       document.getElementById('question-answer').value = prevAnswer;
     } else {
-      document.querySelector(`input[value="${prevAnswer}"]`).checked = true;
+      const input = document.querySelector(`input[value="${prevAnswer}"]`);
+      if (input) input.checked = true;
     }
   }
 
@@ -208,6 +197,7 @@ function updateButtons() {
 
 function nextQuestion() {
   const answer = getCurrentAnswer();
+
   if (!answer) {
     Utils.showToast('Bitte beantworte die Frage.', 'warning');
     return;
@@ -232,12 +222,13 @@ function prevQuestion() {
 
 function getCurrentAnswer() {
   const question = questions[currentQuestion];
+
   if (question.type === 'select') {
     return document.getElementById('question-answer').value;
-  } else {
-    const checked = document.querySelector('input[name="question-answer"]:checked');
-    return checked ? checked.value : null;
   }
+
+  const checked = document.querySelector('input[name="question-answer"]:checked');
+  return checked ? checked.value : null;
 }
 
 function showResults() {
@@ -249,86 +240,120 @@ function showResults() {
 }
 
 function getRecommendations() {
-  let filtered = allApartments;
+  let filtered = [...allApartments];
 
-  // Apply filters based on answers
   if (answers.canton) {
-    filtered = filtered.filter(apt => apt[CONFIG.COLUMNS.canton] === answers.canton);
+    filtered = filtered.filter(item => item.canton === answers.canton);
   }
 
   if (answers.budget) {
-    const maxBudget = parseInt(answers.budget);
-    filtered = filtered.filter(apt => apt[CONFIG.COLUMNS.price] <= maxBudget);
+    filtered = filtered.filter(item => item.price_range === answers.budget);
   }
 
   if (answers.rooms) {
-    const rooms = answers.rooms === '5' ? 5 : parseInt(answers.rooms);
-    filtered = filtered.filter(apt => apt[CONFIG.COLUMNS.rooms] >= rooms);
+    filtered = filtered.filter(item => item.rooms === answers.rooms);
   }
 
   if (answers.area) {
-    const minArea = parseInt(answers.area);
-    filtered = filtered.filter(apt => apt[CONFIG.COLUMNS.area_sqm] >= minArea);
+    filtered = filtered.filter(item => item.area_m2_range === answers.area);
   }
 
-  if (answers.balcony !== 'egal') {
-    filtered = filtered.filter(apt => apt[CONFIG.COLUMNS.balcony] === (answers.balcony === 'true'));
+  if (answers.year) {
+    filtered = filtered.filter(item => item.year === answers.year);
   }
 
-  if (answers.pets !== 'egal') {
-    filtered = filtered.filter(apt => apt[CONFIG.COLUMNS.pets_allowed] === (answers.pets === 'true'));
+  switch (answers.priority) {
+    case 'common':
+      filtered.sort((a, b) => b.value - a.value);
+      break;
+    case 'cheap':
+      filtered.sort((a, b) => comparePriceRanges(a.price_range, b.price_range));
+      break;
+    case 'large':
+      filtered.sort((a, b) => compareAreaRanges(b.area_m2_range, a.area_m2_range));
+      break;
+    default:
+      filtered.sort((a, b) => b.value - a.value);
+      break;
   }
 
-  if (answers.transport !== 'egal') {
-    filtered = filtered.filter(apt => apt[CONFIG.COLUMNS.public_transport_nearby] === (answers.transport === 'true'));
-  }
+  return filtered.slice(0, 5);
+}
 
-  if (answers.furnished !== 'egal') {
-    filtered = filtered.filter(apt => apt[CONFIG.COLUMNS.furnished] === (answers.furnished === 'true'));
-  }
+function comparePriceRanges(a, b) {
+  return getPriceOrder(a) - getPriceOrder(b);
+}
 
-  // Sort by priority
-  if (answers.priority) {
-    switch (answers.priority) {
-      case 'price':
-        filtered.sort((a, b) => a[CONFIG.COLUMNS.price] - b[CONFIG.COLUMNS.price]);
-        break;
-      case 'area':
-        filtered.sort((a, b) => b[CONFIG.COLUMNS.area_sqm] - a[CONFIG.COLUMNS.area_sqm]);
-        break;
-      // Other priorities can be added
-    }
-  }
+function getPriceOrder(priceRange) {
+  const order = [
+    'unter 400 Fr.',
+    '400 - 599 Fr.',
+    '600 - 799 Fr.',
+    '800 - 999 Fr.',
+    '1000 - 1199 Fr.',
+    '1200 - 1399 Fr.',
+    '1400 - 1599 Fr.',
+    '1600 - 1799 Fr.',
+    '1800 - 1999 Fr.',
+    '2000 - 2399 Fr.',
+    '2400 Fr. und +',
+    'Keine bewohnte Mietwohnung',
+    'Angabe fehlt'
+  ];
 
-  return filtered.slice(0, 5); // Top 5 recommendations
+  const index = order.indexOf(priceRange);
+  return index === -1 ? 999 : index;
+}
+
+function compareAreaRanges(a, b) {
+  return getAreaOrder(a) - getAreaOrder(b);
+}
+
+function getAreaOrder(areaRange) {
+  const order = [
+    'unter 30 m2',
+    '30-39 m2',
+    '40-49 m2',
+    '50-59 m2',
+    '60-69 m2',
+    '70-79 m2',
+    '80-89 m2',
+    '90-99 m2',
+    '100-119 m2',
+    '120-139 m2',
+    '140-159 m2',
+    '160-179 m2',
+    '180+ m2',
+    'Angabe fehlt'
+  ];
+
+  const index = order.indexOf(areaRange);
+  return index === -1 ? 999 : index;
 }
 
 function renderRecommendations(recommendations) {
   if (recommendations.length === 0) {
     document.getElementById('recommendations').innerHTML = `
       <div class="empty-state">
-        <i class="bi bi-search"></i>
-        <h4>Keine passenden Wohnungen gefunden</h4>
-        <p>Versuche das Quiz mit anderen Antworten zu wiederholen.</p>
+        <h4>Keine passenden Ergebnisse gefunden</h4>
+        <p>Versuche es mit anderen Antworten.</p>
       </div>
     `;
     return;
   }
 
-  const html = recommendations.map(apt => `
-    <div class="card apartment-card mb-3">
-      <div class="row g-0">
-        <div class="col-md-4">
-          <img src="${apt[CONFIG.COLUMNS.image_url] || 'https://via.placeholder.com/200x150?text=Kein+Bild'}" class="img-fluid rounded-start" alt="Wohnung">
-        </div>
-        <div class="col-md-8">
-          <div class="card-body">
-            <h5 class="card-title">${apt[CONFIG.COLUMNS.title] || 'Unbenannte Wohnung'}</h5>
-            <p class="card-text">${Utils.formatCHF(apt[CONFIG.COLUMNS.price])} | ${apt[CONFIG.COLUMNS.area_sqm]} m² | ${apt[CONFIG.COLUMNS.rooms]} Zimmer</p>
-            <p class="card-text small text-muted">${apt[CONFIG.COLUMNS.city]}, ${apt[CONFIG.COLUMNS.canton]}</p>
-            <a href="search.html?id=${apt[CONFIG.COLUMNS.id]}" class="btn btn-primary btn-sm">Details ansehen</a>
-          </div>
-        </div>
+  const html = recommendations.map(item => `
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">${item.canton}</h5>
+        <p class="mb-1"><strong>Zimmer:</strong> ${item.rooms}</p>
+        <p class="mb-1"><strong>Mietpreisklasse:</strong> ${item.price_range}</p>
+        <p class="mb-1"><strong>Wohnungsfläche:</strong> ${item.area_m2_range}</p>
+        <p class="mb-1"><strong>Jahr:</strong> ${item.year}</p>
+        <p class="mb-2"><strong>Anzahl Wohnungen:</strong> ${Number(item.value).toLocaleString('de-CH')}</p>
+        <p class="text-muted small mb-0">
+          Diese Kategorie passt zu deinen Angaben und zeigt, wie viele Mietwohnungen in dieser Kombination erfasst wurden.
+        </p>
       </div>
     </div>
   `).join('');
@@ -339,13 +364,21 @@ function renderRecommendations(recommendations) {
 function restartQuiz() {
   document.getElementById('quiz-results').classList.add('d-none');
   document.getElementById('quiz-intro').classList.remove('d-none');
+  answers = {};
+  currentQuestion = 0;
 }
 
 function applyFilters() {
-  // Store answers in sessionStorage to apply as filters on search page
-  sessionStorage.setItem('quizFilters', JSON.stringify(answers));
+  const searchFilters = {
+    canton: answers.canton || '',
+    rooms: answers.rooms || '',
+    price_range: answers.budget || '',
+    area_m2_range: answers.area || '',
+    year: answers.year || ''
+  };
+
+  sessionStorage.setItem('quizFilters', JSON.stringify(searchFilters));
   window.location.href = 'search.html?fromQuiz=true';
 }
 
-// Initialize
 document.addEventListener('DOMContentLoaded', initQuiz);

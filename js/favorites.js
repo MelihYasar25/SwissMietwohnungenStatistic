@@ -1,44 +1,47 @@
-// Favorites functionality
 let allApartments = [];
 let favoriteApartments = [];
 
 async function initFavorites() {
   showLoading();
-  allApartments = await fetchApartments();
-  hideLoading();
-  if (allApartments.length === 0) {
-    showError('Keine Daten verfügbar.');
-    return;
+
+  try {
+    allApartments = await fetchApartments();
+
+    if (!allApartments || allApartments.length === 0) {
+      showError('Keine Daten verfügbar.');
+      return;
+    }
+
+    loadFavorites();
+    renderFavorites();
+  } catch (error) {
+    console.error('Favorites init error:', error);
+    showError('Fehler beim Laden der Favoriten.');
   }
-  loadFavorites();
-  renderFavorites();
 }
 
 function showLoading() {
-  document.getElementById('favorites-container').innerHTML = '<div class="text-center"><div class="loading-spinner"></div> Lade Favoriten...</div>';
-}
-
-function hideLoading() {
-  // Remove loading
+  document.getElementById('favorites-container').innerHTML =
+    '<div class="text-center"><div class="loading-spinner"></div> Lade Favoriten...</div>';
 }
 
 function showError(message) {
-  document.getElementById('favorites-container').innerHTML = `<div class="alert alert-danger">${message}</div>`;
+  document.getElementById('favorites-container').innerHTML =
+    `<div class="alert alert-danger">${message}</div>`;
 }
 
 function loadFavorites() {
   const favorites = Utils.getFavorites();
-  favoriteApartments = allApartments.filter(apt => favorites.includes(apt[CONFIG.COLUMNS.id]));
+  favoriteApartments = allApartments.filter(item => favorites.includes(item.id));
 }
 
 function renderFavorites() {
   if (favoriteApartments.length === 0) {
     document.getElementById('favorites-container').innerHTML = `
-      <div class="empty-state">
-        <i class="bi bi-heart"></i>
+      <div class="empty-state text-center">
         <h4>Noch keine Favoriten</h4>
-        <p>Durchsuche Wohnungen und füge sie zu deinen Favoriten hinzu.</p>
-        <a href="search.html" class="btn btn-primary">Wohnungen suchen</a>
+        <p>Speichere interessante Wohnungskategorien aus der Suche in deinen Favoriten.</p>
+        <a href="search.html" class="btn btn-primary">Zur Suche</a>
       </div>
     `;
     return;
@@ -46,18 +49,27 @@ function renderFavorites() {
 
   const html = `
     <div class="row">
-      ${favoriteApartments.map(apt => `
+      ${favoriteApartments.map(item => `
         <div class="col-md-6 col-lg-4 mb-4">
-          <div class="card apartment-card h-100">
-            <img src="${apt[CONFIG.COLUMNS.image_url] || 'https://via.placeholder.com/300x200?text=Kein+Bild'}" class="card-img-top" alt="Wohnung">
+          <div class="card h-100">
             <div class="card-body d-flex flex-column">
-              <h6 class="card-title">${apt[CONFIG.COLUMNS.title] || 'Unbenannte Wohnung'}</h6>
-              <p class="card-text">${Utils.formatCHF(apt[CONFIG.COLUMNS.price])} | ${apt[CONFIG.COLUMNS.area_sqm]} m² | ${apt[CONFIG.COLUMNS.rooms]} Zimmer</p>
-              <p class="card-text small text-muted">${apt[CONFIG.COLUMNS.city]}, ${apt[CONFIG.COLUMNS.canton]}</p>
-              <div class="mt-auto">
-                <button class="btn btn-primary btn-sm me-2" onclick="showApartmentDetails(${apt[CONFIG.COLUMNS.id]})">Details</button>
-                <button class="btn btn-outline-danger btn-sm me-2" onclick="removeFromFavorites(${apt[CONFIG.COLUMNS.id]})">Entfernen</button>
-                <button class="btn btn-outline-secondary btn-sm" onclick="addToComparison(${apt[CONFIG.COLUMNS.id]})">Vergleichen</button>
+              <h5 class="card-title">${item.canton}</h5>
+              <p class="card-text mb-1"><strong>Zimmer:</strong> ${item.rooms}</p>
+              <p class="card-text mb-1"><strong>Mietpreisklasse:</strong> ${item.price_range}</p>
+              <p class="card-text mb-1"><strong>Wohnungsfläche:</strong> ${item.area_m2_range}</p>
+              <p class="card-text mb-1"><strong>Jahr:</strong> ${item.year}</p>
+              <p class="card-text mb-3"><strong>Anzahl Wohnungen:</strong> ${Number(item.value).toLocaleString('de-CH')}</p>
+
+              <div class="mt-auto d-flex flex-wrap gap-2">
+                <button class="btn btn-primary btn-sm" onclick="showCategoryDetails(${item.id})">
+                  Details
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="removeFromFavorites(${item.id})">
+                  Entfernen
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="addToComparison(${item.id})">
+                  Vergleichen
+                </button>
               </div>
             </div>
           </div>
@@ -69,23 +81,49 @@ function renderFavorites() {
   document.getElementById('favorites-container').innerHTML = html;
 }
 
-function showApartmentDetails(id) {
-  const apartment = allApartments.find(apt => apt[CONFIG.COLUMNS.id] === id);
-  if (!apartment) return;
+function showCategoryDetails(id) {
+  const item = allApartments.find(entry => entry.id === id);
+  if (!item) return;
 
-  // Simple alert for now, could be expanded to modal
-  alert(`${apartment[CONFIG.COLUMNS.title] || 'Wohnung'}\nPreis: ${Utils.formatCHF(apartment[CONFIG.COLUMNS.price])}\nFläche: ${apartment[CONFIG.COLUMNS.area_sqm]} m²\nZimmer: ${apartment[CONFIG.COLUMNS.rooms]}\nOrt: ${apartment[CONFIG.COLUMNS.city]}, ${apartment[CONFIG.COLUMNS.canton]}`);
+  alert(
+    `Kanton: ${item.canton}\n` +
+    `Zimmer: ${item.rooms}\n` +
+    `Mietpreisklasse: ${item.price_range}\n` +
+    `Wohnungsfläche: ${item.area_m2_range}\n` +
+    `Jahr: ${item.year}\n` +
+    `Anzahl Wohnungen: ${Number(item.value).toLocaleString('de-CH')}`
+  );
 }
 
 function removeFromFavorites(id) {
   Utils.removeFromFavorites(id);
   loadFavorites();
   renderFavorites();
+  Utils.showToast('Favorit entfernt.', 'info');
 }
 
 function addToComparison(id) {
-  Utils.showToast('Wohnung zur Vergleichsliste hinzugefügt', 'info');
+  let items = [];
+
+  try {
+    items = JSON.parse(sessionStorage.getItem('comparisonItems')) || [];
+  } catch (error) {
+    items = [];
+  }
+
+  if (items.includes(id)) {
+    Utils.showToast('Diese Kategorie ist bereits im Vergleich.', 'info');
+    return;
+  }
+
+  if (items.length >= 4) {
+    Utils.showToast('Du kannst maximal 4 Kategorien vergleichen.', 'warning');
+    return;
+  }
+
+  items.push(id);
+  sessionStorage.setItem('comparisonItems', JSON.stringify(items));
+  Utils.showToast('Kategorie zur Vergleichsliste hinzugefügt.', 'success');
 }
 
-// Initialize
 document.addEventListener('DOMContentLoaded', initFavorites);

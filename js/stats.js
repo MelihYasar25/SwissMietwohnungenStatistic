@@ -1,70 +1,94 @@
-// Statistics functionality
 let allApartments = [];
 
 async function initStats() {
   showLoading();
-  allApartments = await fetchApartments();
-  hideLoading();
-  if (allApartments.length === 0) {
-    showError('Keine Daten verfügbar.');
-    return;
+
+  try {
+    allApartments = await fetchApartments();
+
+    if (!allApartments || allApartments.length === 0) {
+      showError('Keine Daten verfügbar.');
+      return;
+    }
+
+    renderTotalStats();
+    renderCantonStats();
+    renderYearStats();
+    renderRoomsDistribution();
+    renderPriceRange();
+  } catch (error) {
+    console.error('Stats init error:', error);
+    showError('Fehler beim Laden der Daten.');
   }
-  renderTotalStats();
-  renderCantonAvgRent();
-  renderCityAvgRent();
-  renderRoomsDistribution();
-  renderPriceRange();
 }
 
 function showLoading() {
-  document.getElementById('total-stats').innerHTML = '<div class="text-center"><div class="loading-spinner"></div></div>';
-}
-
-function hideLoading() {
-  // Remove loading
+  document.getElementById('total-stats').innerHTML =
+    '<div class="text-center"><div class="loading-spinner"></div></div>';
 }
 
 function showError(message) {
-  document.getElementById('total-stats').innerHTML = `<div class="alert alert-danger">${message}</div>`;
+  document.getElementById('total-stats').innerHTML =
+    `<div class="alert alert-danger">${message}</div>`;
+}
+
+function getTotalCount() {
+  return allApartments.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
 }
 
 function renderTotalStats() {
-  const stats = Utils.calculateStats(allApartments);
+  const totalRows = allApartments.length;
+  const totalApartments = getTotalCount();
+  const uniqueCantons = [...new Set(allApartments.map(item => item.canton))].length;
+  const uniqueYears = [...new Set(allApartments.map(item => item.year))].length;
+
   const html = `
-    <div class="h2 mb-0">${stats.totalApartments}</div>
-    <small class="text-muted">Wohnungen</small>
+    <div class="h4 mb-2">${totalApartments.toLocaleString('de-CH')}</div>
+    <small class="text-muted">Total gezählte Mietwohnungen</small>
     <hr>
     <div class="row text-center">
-      <div class="col-6">
-        <div class="h5 mb-0">${Utils.formatCHF(stats.avgPrice)}</div>
-        <small class="text-muted">Ø Miete</small>
+      <div class="col-6 mb-3">
+        <div class="h5 mb-0">${totalRows.toLocaleString('de-CH')}</div>
+        <small class="text-muted">Datensätze</small>
       </div>
-      <div class="col-6">
-        <div class="h5 mb-0">${stats.avgArea.toFixed(1)} m²</div>
-        <small class="text-muted">Ø Fläche</small>
+      <div class="col-6 mb-3">
+        <div class="h5 mb-0">${uniqueCantons}</div>
+        <small class="text-muted">Kantone</small>
+      </div>
+      <div class="col-12">
+        <div class="h5 mb-0">${uniqueYears}</div>
+        <small class="text-muted">Jahre</small>
       </div>
     </div>
   `;
+
   document.getElementById('total-stats').innerHTML = html;
 }
 
-function renderCantonAvgRent() {
-  const cantonGroups = Utils.groupByCanton(allApartments);
-  const cantonStats = Object.entries(cantonGroups).map(([canton, apartments]) => {
-    const avgPrice = apartments.reduce((sum, apt) => sum + apt[CONFIG.COLUMNS.price], 0) / apartments.length;
-    return { canton, avgPrice, count: apartments.length };
-  }).sort((a, b) => b.avgPrice - a.avgPrice);
+function renderCantonStats() {
+  const cantonMap = {};
 
-  const maxPrice = Math.max(...cantonStats.map(s => s.avgPrice));
+  allApartments.forEach(item => {
+    if (!cantonMap[item.canton]) {
+      cantonMap[item.canton] = 0;
+    }
+    cantonMap[item.canton] += Number(item.value) || 0;
+  });
+
+  const cantonStats = Object.entries(cantonMap)
+    .map(([canton, count]) => ({ canton, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const maxCount = Math.max(...cantonStats.map(item => item.count), 1);
 
   const html = cantonStats.map(stat => `
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <span>${stat.canton} (${stat.count})</span>
+      <span>${stat.canton}</span>
       <div class="d-flex align-items-center">
-        <div class="stats-bar flex-grow-1 me-2" style="width: 150px;">
-          <div class="stats-fill" style="width: ${(stat.avgPrice / maxPrice * 100)}%"></div>
+        <div class="stats-bar flex-grow-1 me-2" style="width: 160px;">
+          <div class="stats-fill" style="width: ${(stat.count / maxCount) * 100}%"></div>
         </div>
-        <span class="badge bg-primary">${Utils.formatCHF(stat.avgPrice)}</span>
+        <span class="badge bg-primary">${stat.count.toLocaleString('de-CH')}</span>
       </div>
     </div>
   `).join('');
@@ -72,27 +96,30 @@ function renderCantonAvgRent() {
   document.getElementById('canton-avg-rent').innerHTML = html || '<p>Keine Daten verfügbar</p>';
 }
 
-function renderCityAvgRent() {
-  const cityGroups = Utils.groupByCity(allApartments);
-  const cityStats = Object.entries(cityGroups)
-    .filter(([, apartments]) => apartments.length >= 3) // Only cities with at least 3 apartments
-    .map(([city, apartments]) => {
-      const avgPrice = apartments.reduce((sum, apt) => sum + apt[CONFIG.COLUMNS.price], 0) / apartments.length;
-      return { city, avgPrice, count: apartments.length };
-    })
-    .sort((a, b) => b.avgPrice - a.avgPrice)
-    .slice(0, 10); // Top 10
+function renderYearStats() {
+  const yearMap = {};
 
-  const maxPrice = Math.max(...cityStats.map(s => s.avgPrice));
+  allApartments.forEach(item => {
+    if (!yearMap[item.year]) {
+      yearMap[item.year] = 0;
+    }
+    yearMap[item.year] += Number(item.value) || 0;
+  });
 
-  const html = cityStats.map(stat => `
+  const yearStats = Object.entries(yearMap)
+    .map(([year, count]) => ({ year, count }))
+    .sort((a, b) => Number(a.year) - Number(b.year));
+
+  const maxCount = Math.max(...yearStats.map(item => item.count), 1);
+
+  const html = yearStats.map(stat => `
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <span>${stat.city} (${stat.count})</span>
+      <span>${stat.year}</span>
       <div class="d-flex align-items-center">
-        <div class="stats-bar flex-grow-1 me-2" style="width: 120px;">
-          <div class="stats-fill" style="width: ${(stat.avgPrice / maxPrice * 100)}%"></div>
+        <div class="stats-bar flex-grow-1 me-2" style="width: 140px;">
+          <div class="stats-fill" style="width: ${(stat.count / maxCount) * 100}%"></div>
         </div>
-        <span class="badge bg-primary">${Utils.formatCHF(stat.avgPrice)}</span>
+        <span class="badge bg-primary">${stat.count.toLocaleString('de-CH')}</span>
       </div>
     </div>
   `).join('');
@@ -101,23 +128,29 @@ function renderCityAvgRent() {
 }
 
 function renderRoomsDistribution() {
-  const roomsCount = {};
-  allApartments.forEach(apt => {
-    const rooms = apt[CONFIG.COLUMNS.rooms];
-    roomsCount[rooms] = (roomsCount[rooms] || 0) + 1;
+  const roomsMap = {};
+
+  allApartments.forEach(item => {
+    if (!roomsMap[item.rooms]) {
+      roomsMap[item.rooms] = 0;
+    }
+    roomsMap[item.rooms] += Number(item.value) || 0;
   });
 
-  const total = allApartments.length;
-  const sortedRooms = Object.entries(roomsCount).sort(([a], [b]) => parseInt(a) - parseInt(b));
+  const total = getTotalCount();
 
-  const html = sortedRooms.map(([rooms, count]) => `
+  const roomStats = Object.entries(roomsMap)
+    .map(([rooms, count]) => ({ rooms, count }))
+    .sort((a, b) => a.rooms.localeCompare(b.rooms, 'de', { numeric: true }));
+
+  const html = roomStats.map(stat => `
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <span>${rooms} Zimmer</span>
+      <span>${stat.rooms}</span>
       <div class="d-flex align-items-center">
-        <div class="stats-bar flex-grow-1 me-2" style="width: 100px;">
-          <div class="stats-fill" style="width: ${(count / total * 100)}%"></div>
+        <div class="stats-bar flex-grow-1 me-2" style="width: 120px;">
+          <div class="stats-fill" style="width: ${(stat.count / total) * 100}%"></div>
         </div>
-        <span class="badge bg-primary">${count}</span>
+        <span class="badge bg-primary">${stat.count.toLocaleString('de-CH')}</span>
       </div>
     </div>
   `).join('');
@@ -126,45 +159,34 @@ function renderRoomsDistribution() {
 }
 
 function renderPriceRange() {
-  const prices = allApartments.map(a => a[CONFIG.COLUMNS.price]).filter(p => p).sort((a, b) => a - b);
-  if (prices.length === 0) {
-    document.getElementById('price-range').innerHTML = '<p>Keine Preisdaten verfügbar</p>';
-    return;
-  }
+  const priceMap = {};
 
-  const minPrice = prices[0];
-  const maxPrice = prices[prices.length - 1];
-  const medianPrice = prices[Math.floor(prices.length / 2)];
-  const q1 = prices[Math.floor(prices.length / 4)];
-  const q3 = prices[Math.floor(3 * prices.length / 4)];
+  allApartments.forEach(item => {
+    if (!priceMap[item.price_range]) {
+      priceMap[item.price_range] = 0;
+    }
+    priceMap[item.price_range] += Number(item.value) || 0;
+  });
 
-  const html = `
-    <div class="row text-center">
-      <div class="col-md-2">
-        <div class="h4 mb-0">${Utils.formatCHF(minPrice)}</div>
-        <small class="text-muted">Minimum</small>
-      </div>
-      <div class="col-md-2">
-        <div class="h4 mb-0">${Utils.formatCHF(q1)}</div>
-        <small class="text-muted">1. Quartil</small>
-      </div>
-      <div class="col-md-4">
-        <div class="h4 mb-0">${Utils.formatCHF(medianPrice)}</div>
-        <small class="text-muted">Median</small>
-      </div>
-      <div class="col-md-2">
-        <div class="h4 mb-0">${Utils.formatCHF(q3)}</div>
-        <small class="text-muted">3. Quartil</small>
-      </div>
-      <div class="col-md-2">
-        <div class="h4 mb-0">${Utils.formatCHF(maxPrice)}</div>
-        <small class="text-muted">Maximum</small>
+  const total = getTotalCount();
+
+  const priceStats = Object.entries(priceMap)
+    .map(([range, count]) => ({ range, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const html = priceStats.map(stat => `
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span>${stat.range}</span>
+      <div class="d-flex align-items-center">
+        <div class="stats-bar flex-grow-1 me-2" style="width: 160px;">
+          <div class="stats-fill" style="width: ${(stat.count / total) * 100}%"></div>
+        </div>
+        <span class="badge bg-primary">${stat.count.toLocaleString('de-CH')}</span>
       </div>
     </div>
-  `;
+  `).join('');
 
-  document.getElementById('price-range').innerHTML = html;
+  document.getElementById('price-range').innerHTML = html || '<p>Keine Daten verfügbar</p>';
 }
 
-// Initialize
 document.addEventListener('DOMContentLoaded', initStats);

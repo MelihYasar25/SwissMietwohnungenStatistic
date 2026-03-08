@@ -1,41 +1,49 @@
-// Dashboard / App initialization
 let allApartments = [];
 
 async function initApp() {
   showLoading();
-  allApartments = await fetchApartments();
-  hideLoading();
-  if (allApartments.length === 0) {
-    showError('No data available. Please check the database connection.');
-    return;
+
+  try {
+    allApartments = await window.fetchApartments();
+    console.log('Loaded data:', allApartments);
+
+    if (!allApartments || allApartments.length === 0) {
+      showError('No data available. Please check the database connection.');
+      return;
+    }
+
+    renderSummaryCards();
+    renderPopularCantons();
+    renderLatestApartments();
+  } catch (error) {
+    console.error('Init error:', error);
+    showError('Failed to load data.');
   }
-  renderSummaryCards();
-  renderPopularCantons();
-  renderLatestApartments();
 }
 
 function showLoading() {
-  document.getElementById('summary-cards').innerHTML = '<div class="col-12 text-center"><div class="loading-spinner"></div> Loading data...</div>';
+  document.getElementById('summary-cards').innerHTML =
+    '<div class="col-12 text-center"><div class="loading-spinner"></div> Loading data...</div>';
 }
 
 function hideLoading() {
-  // Remove loading indicator
 }
 
 function showError(message) {
-  document.getElementById('summary-cards').innerHTML = `<div class="col-12"><div class="alert alert-danger">${message}</div></div>`;
+  document.getElementById('summary-cards').innerHTML =
+    `<div class="col-12"><div class="alert alert-danger">${message}</div></div>`;
 }
 
 function renderSummaryCards() {
-  const stats = Utils.calculateStats(allApartments);
-  const cantonGroups = Utils.groupByCanton(allApartments);
+  const total = allApartments.length;
+  const uniqueCantons = [...new Set(allApartments.map(item => item[window.CONFIG.COLUMNS.canton]))].length;
+  const avgRooms =
+    allApartments.reduce((sum, item) => sum + (Number(item[window.CONFIG.COLUMNS.rooms]) || 0), 0) / total;
 
   const cards = [
-    { title: 'Number of Apartments', value: stats.totalApartments, icon: '🏠' },
-    { title: 'Average Rent', value: Utils.formatCHF(stats.avgPrice), icon: '💰' },
-    { title: 'Average Living Space', value: `${stats.avgArea.toFixed(1)} m²`, icon: '📐' },
-    { title: 'Average Price per m²', value: Utils.formatCHF(stats.avgPricePerSqm), icon: '📊' },
-    { title: 'Apartments per Canton', value: Object.keys(cantonGroups).length, icon: '🗺️' }
+    { title: 'Datensätze', value: total, icon: '🏠' },
+    { title: 'Kantone', value: uniqueCantons, icon: '🗺️' },
+    { title: 'Ø Zimmer', value: avgRooms.toFixed(1), icon: '📐' }
   ];
 
   const html = cards.map(card => `
@@ -54,20 +62,22 @@ function renderSummaryCards() {
 }
 
 function renderPopularCantons() {
-  const cantonGroups = Utils.groupByCanton(allApartments);
-  const sortedCantons = Object.entries(cantonGroups)
-    .sort(([,a], [,b]) => b.length - a.length)
+  const groups = {};
+
+  allApartments.forEach(item => {
+    const canton = item[window.CONFIG.COLUMNS.canton] || 'Unknown';
+    if (!groups[canton]) groups[canton] = [];
+    groups[canton].push(item);
+  });
+
+  const sortedCantons = Object.entries(groups)
+    .sort(([, a], [, b]) => b.length - a.length)
     .slice(0, 5);
 
-  const html = sortedCantons.map(([canton, apartments]) => `
+  const html = sortedCantons.map(([canton, entries]) => `
     <div class="d-flex justify-content-between align-items-center mb-2">
       <span>${canton}</span>
-      <div class="d-flex align-items-center">
-        <div class="stats-bar flex-grow-1 me-2" style="width: 100px;">
-          <div class="stats-fill" style="width: ${(apartments.length / allApartments.length * 100)}%"></div>
-        </div>
-        <span class="badge bg-primary">${apartments.length}</span>
-      </div>
+      <span class="badge bg-primary">${entries.length}</span>
     </div>
   `).join('');
 
@@ -75,23 +85,20 @@ function renderPopularCantons() {
 }
 
 function renderLatestApartments() {
-  const latest = allApartments
-    .sort((a, b) => new Date(b[CONFIG.COLUMNS.created_at]) - new Date(a[CONFIG.COLUMNS.created_at]))
-    .slice(0, 3);
+  const latest = allApartments.slice(0, 3);
 
-  const html = latest.map(apt => `
-    <div class="card apartment-card mb-3">
-      <img src="${apt[CONFIG.COLUMNS.image_url] || 'https://via.placeholder.com/300x200?text=No+Image'}" class="card-img-top" alt="Apartment">
+  const html = latest.map(item => `
+    <div class="card mb-3">
       <div class="card-body">
-        <h6 class="card-title">${apt[CONFIG.COLUMNS.title] || 'Unnamed Apartment'}</h6>
-        <p class="card-text">${Utils.formatCHF(apt[CONFIG.COLUMNS.price])} - ${apt[CONFIG.COLUMNS.city]}, ${apt[CONFIG.COLUMNS.canton]}</p>
-        <a href="search.html?id=${apt[CONFIG.COLUMNS.id]}" class="btn btn-primary btn-sm">Details</a>
+        <h6 class="card-title">${item[window.CONFIG.COLUMNS.canton] || 'Unknown Canton'}</h6>
+        <p class="card-text mb-1"><strong>Rooms:</strong> ${item[window.CONFIG.COLUMNS.rooms] ?? '-'}</p>
+        <p class="card-text mb-1"><strong>Price Range:</strong> ${item[window.CONFIG.COLUMNS.price_range] ?? '-'}</p>
+        <p class="card-text"><strong>Area Range:</strong> ${item[window.CONFIG.COLUMNS.area_m2_range] ?? '-'}</p>
       </div>
     </div>
   `).join('');
 
-  document.getElementById('latest-apartments').innerHTML = html || '<p>No apartments available</p>';
+  document.getElementById('latest-apartments').innerHTML = html || '<p>No data available</p>';
 }
 
-// Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', initApp);

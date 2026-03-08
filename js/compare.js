@@ -1,44 +1,62 @@
-// Comparison functionality
 let allApartments = [];
 let comparisonApartments = [];
 
 async function initCompare() {
   showLoading();
-  allApartments = await fetchApartments();
-  hideLoading();
-  if (allApartments.length === 0) {
-    showError('Keine Daten verfügbar.');
-    return;
+
+  try {
+    allApartments = await fetchApartments();
+
+    if (!allApartments || allApartments.length === 0) {
+      showError('Keine Daten verfügbar.');
+      return;
+    }
+
+    loadComparison();
+    renderComparison();
+  } catch (error) {
+    console.error('Compare init error:', error);
+    showError('Fehler beim Laden der Vergleichsdaten.');
   }
-  loadComparison();
-  renderComparison();
 }
 
 function showLoading() {
-  document.getElementById('comparison-container').innerHTML = '<div class="text-center"><div class="loading-spinner"></div> Lade Vergleich...</div>';
-}
-
-function hideLoading() {
-  // Remove loading
+  document.getElementById('comparison-container').innerHTML =
+    '<div class="text-center"><div class="loading-spinner"></div> Lade Vergleich...</div>';
 }
 
 function showError(message) {
-  document.getElementById('comparison-container').innerHTML = `<div class="alert alert-danger">${message}</div>`;
+  document.getElementById('comparison-container').innerHTML =
+    `<div class="alert alert-danger">${message}</div>`;
 }
 
 function loadComparison() {
-  // For demo, load some apartments. In real app, this would be from sessionStorage or similar
-  comparisonApartments = allApartments.slice(0, 3); // Demo: first 3 apartments
+  const saved = sessionStorage.getItem('comparisonItems');
+
+  if (saved) {
+    try {
+      const ids = JSON.parse(saved);
+      comparisonApartments = allApartments.filter(item => ids.includes(item.id)).slice(0, 4);
+    } catch (error) {
+      console.error('Failed to load comparison items:', error);
+      comparisonApartments = [];
+    }
+  }
+
+  if (!comparisonApartments.length) {
+    comparisonApartments = [...allApartments]
+      .sort((a, b) => Number(b.value) - Number(a.value))
+      .slice(0, 3);
+  }
 }
 
 function renderComparison() {
   if (comparisonApartments.length === 0) {
     document.getElementById('comparison-container').innerHTML = `
-      <div class="empty-state">
-        <i class="bi bi-bar-chart"></i>
-        <h4>Keine Wohnungen zum Vergleichen</h4>
-        <p>Suche nach Wohnungen und füge sie zum Vergleich hinzu.</p>
-        <a href="search.html" class="btn btn-primary">Wohnungen suchen</a>
+      <div class="empty-state text-center">
+        <h4>Keine Kategorien zum Vergleichen</h4>
+        <p>Wähle auf der Suchseite Vergleichseinträge aus oder starte mit den beliebtesten Kategorien.</p>
+        <a href="search.html" class="btn btn-primary">Zur Suche</a>
       </div>
     `;
     return;
@@ -46,57 +64,87 @@ function renderComparison() {
 
   const html = `
     <div class="table-responsive">
-      <table class="table table-striped comparison-table">
+      <table class="table table-striped comparison-table align-middle">
         <thead>
           <tr>
             <th>Eigenschaft</th>
-            ${comparisonApartments.map(apt => `<th>${apt[CONFIG.COLUMNS.title] || 'Wohnung'}</th>`).join('')}
+            ${comparisonApartments.map((item, index) => `<th>Kategorie ${index + 1}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>Bild</strong></td>
-            ${comparisonApartments.map(apt => `<td><img src="${apt[CONFIG.COLUMNS.image_url] || 'https://via.placeholder.com/100x75?text=Kein+Bild'}" class="img-fluid" alt="Wohnung"></td>`).join('')}
-          </tr>
-          <tr>
-            <td><strong>Preis</strong></td>
-            ${comparisonApartments.map(apt => `<td>${Utils.formatCHF(apt[CONFIG.COLUMNS.price])}</td>`).join('')}
-          </tr>
-          <tr>
-            <td><strong>Fläche</strong></td>
-            ${comparisonApartments.map(apt => `<td>${apt[CONFIG.COLUMNS.area_sqm]} m²</td>`).join('')}
+            <td><strong>Kanton</strong></td>
+            ${comparisonApartments.map(item => `<td>${item.canton}</td>`).join('')}
           </tr>
           <tr>
             <td><strong>Zimmer</strong></td>
-            ${comparisonApartments.map(apt => `<td>${apt[CONFIG.COLUMNS.rooms]}</td>`).join('')}
+            ${comparisonApartments.map(item => `<td>${item.rooms}</td>`).join('')}
           </tr>
           <tr>
-            <td><strong>Stadt</strong></td>
-            ${comparisonApartments.map(apt => `<td>${apt[CONFIG.COLUMNS.city]}</td>`).join('')}
+            <td><strong>Mietpreisklasse</strong></td>
+            ${comparisonApartments.map(item => `<td>${item.price_range}</td>`).join('')}
           </tr>
           <tr>
-            <td><strong>Kanton</strong></td>
-            ${comparisonApartments.map(apt => `<td>${apt[CONFIG.COLUMNS.canton]}</td>`).join('')}
+            <td><strong>Wohnungsfläche</strong></td>
+            ${comparisonApartments.map(item => `<td>${item.area_m2_range}</td>`).join('')}
           </tr>
           <tr>
-            <td><strong>Preis pro m²</strong></td>
-            ${comparisonApartments.map(apt => `<td>${Utils.formatCHF(Utils.calculatePricePerSqm(apt[CONFIG.COLUMNS.price], apt[CONFIG.COLUMNS.area_sqm]))}</td>`).join('')}
+            <td><strong>Jahr</strong></td>
+            ${comparisonApartments.map(item => `<td>${item.year}</td>`).join('')}
           </tr>
           <tr>
-            <td><strong>Ausstattung</strong></td>
-            ${comparisonApartments.map(apt => `<td>${apt[CONFIG.COLUMNS.features] ? apt[CONFIG.COLUMNS.features].join(', ') : 'Keine Angaben'}</td>`).join('')}
+            <td><strong>Anzahl Wohnungen</strong></td>
+            ${comparisonApartments.map(item => `<td>${Number(item.value).toLocaleString('de-CH')}</td>`).join('')}
+          </tr>
+          <tr>
+            <td><strong>Bewertung</strong></td>
+            ${comparisonApartments.map(item => `<td>${getCategorySummary(item)}</td>`).join('')}
           </tr>
           <tr>
             <td><strong>Aktionen</strong></td>
-            ${comparisonApartments.map(apt => `<td><a href="search.html?id=${apt[CONFIG.COLUMNS.id]}" class="btn btn-primary btn-sm">Details</a></td>`).join('')}
+            ${comparisonApartments.map(item => `
+              <td>
+                <button class="btn btn-outline-danger btn-sm" onclick="removeFromComparison(${item.id})">
+                  Entfernen
+                </button>
+              </td>
+            `).join('')}
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="mt-3 d-flex gap-2">
+      <a href="search.html" class="btn btn-primary">Weitere Kategorien suchen</a>
+      <button class="btn btn-outline-secondary" onclick="clearComparison()">Vergleich leeren</button>
     </div>
   `;
 
   document.getElementById('comparison-container').innerHTML = html;
 }
 
-// Initialize
+function getCategorySummary(item) {
+  const count = Number(item.value) || 0;
+
+  if (count > 5000) return 'Sehr häufig';
+  if (count > 1000) return 'Häufig';
+  if (count > 200) return 'Mittel';
+  return 'Eher selten';
+}
+
+function removeFromComparison(id) {
+  comparisonApartments = comparisonApartments.filter(item => item.id !== id);
+
+  const ids = comparisonApartments.map(item => item.id);
+  sessionStorage.setItem('comparisonItems', JSON.stringify(ids));
+
+  renderComparison();
+}
+
+function clearComparison() {
+  comparisonApartments = [];
+  sessionStorage.removeItem('comparisonItems');
+  renderComparison();
+}
+
 document.addEventListener('DOMContentLoaded', initCompare);
