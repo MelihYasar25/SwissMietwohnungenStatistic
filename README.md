@@ -13,8 +13,6 @@ The project includes a **statistics dashboard**, **advanced search filters**, **
 - ⭐ Save apartments to your favorites
 - ⚖️ Compare multiple apartments side by side
 - 📱 Fully responsive design for desktop, tablet, and mobile
-- ☁️ Supabase integration for apartment data storage
-
 ---
 
 ## 🖼 Preview
