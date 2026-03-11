@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <nav class="navbar navbar-expand-lg navbar-dark custom-navbar">
     <div class="container">
       <a class="navbar-brand" href="index.html">Swiss Rental Apartments</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -41,41 +41,72 @@
     </div>
   </nav>
 
-  <div class="container my-4">
-    <h2>Apartment Finder Quiz</h2>
-    <p class="lead">Answer a few questions and we'll recommend suitable apartments for you!</p>
-
-    <div id="quiz-container">
-      <div id="quiz-intro" class="text-center mb-4">
-        <h3>Ready for your dream apartment?</h3>
-        <button id="start-quiz" class="btn btn-primary btn-lg">Start Quiz</button>
-      </div>
-
-      <div id="quiz-questions" class="d-none">
-        <div class="quiz-progress mb-4">
-          <div id="progress-fill" class="quiz-progress-fill" style="width: 0%"></div>
-        </div>
-        <div id="question-container">
-          <!-- Questions will be populated by JS -->
-        </div>
-        <div class="d-flex justify-content-between mt-4">
-          <button id="prev-btn" class="btn btn-outline-secondary" disabled>Back</button>
-          <button id="next-btn" class="btn btn-primary">Next</button>
-        </div>
-      </div>
-
-      <div id="quiz-results" class="d-none">
-        <h3>Your Recommendations</h3>
-        <div id="recommendations">
-          <!-- Recommendations will be populated by JS -->
-        </div>
-        <div class="mt-4">
-          <button id="restart-quiz" class="btn btn-outline-primary me-2">Restart Quiz</button>
-          <button id="apply-filters" class="btn btn-success">Apply as Search Filters</button>
+  <section class="landing-hero quiz-hero-match">
+    <div class="container">
+      <div class="row justify-content-center text-center">
+        <div class="col-xl-9">
+          <span class="hero-badge">Apartment Finder</span>
+          <h1 class="hero-title mx-auto">Find suitable rental apartments in Switzerland</h1>
+          <p class="hero-text mx-auto">
+            Answer a few questions and get matching statistical recommendations
+            based on canton, number of rooms, price range, and living area.
+          </p>
         </div>
       </div>
     </div>
-  </div>
+  </section>
+
+  <main class="dashboard-main">
+    <div class="container-fluid py-5 px-4">
+      <div class="row">
+        <div class="col-12">
+          <div id="quiz-container" class="dashboard-card quiz-main-card">
+            <div id="quiz-intro" class="quiz-panel-modern text-center">
+              <div class="quiz-illustration">🏠</div>
+              <span class="section-kicker">Get started</span>
+              <h3>Ready for your apartment match?</h3>
+              <p class="text-muted mb-4">The quiz takes less than a minute.</p>
+              <button id="start-quiz" class="btn btn-primary btn-lg px-4">Start Quiz</button>
+            </div>
+
+            <div id="quiz-questions" class="quiz-panel-modern d-none">
+              <div class="quiz-progress-wrap mb-4">
+                <div class="quiz-progress">
+                  <div id="progress-fill" class="quiz-progress-fill" style="width: 0%"></div>
+                </div>
+                <div class="quiz-step-label">
+                  Question <span id="step-current">1</span> of <span id="step-total">6</span>
+                </div>
+              </div>
+
+              <div id="question-container"></div>
+
+              <div class="quiz-actions">
+                <button id="prev-btn" class="btn btn-light" disabled>Back</button>
+                <button id="next-btn" class="btn btn-primary">Next</button>
+              </div>
+            </div>
+
+            <div id="quiz-results" class="quiz-panel-modern d-none">
+              <div class="card-top mb-3">
+                <div>
+                  <span class="section-kicker">Results</span>
+                  <h3 class="mb-0">Your recommendations</h3>
+                </div>
+              </div>
+
+              <div id="recommendations"></div>
+
+              <div class="mt-4 d-flex gap-2 flex-wrap">
+                <button id="restart-quiz" class="btn btn-outline-primary">Restart Quiz</button>
+                <button id="apply-filters" class="btn btn-success">Apply as Search Filters</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 
   <div id="toast-container" class="toast-container"></div>
 

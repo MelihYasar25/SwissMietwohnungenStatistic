@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Suchen - Swiss Mietwohnungen Statistik</title>
+  <title>Search - Swiss Rental Apartments</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <nav class="navbar navbar-expand-lg navbar-dark custom-navbar">
     <div class="container">
-      <a class="navbar-brand" href="index.html">Swiss Rental Apartments</a>
+      <a class="navbar-brand fw-bold" href="index.html">Swiss Rental Apartments</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
           <li class="nav-item">
             <a class="nav-link" href="index.html">Dashboard</a>
           </li>
@@ -41,93 +41,116 @@
     </div>
   </nav>
 
-  <div class="container my-4">
-    <h2>Search Rental Apartments</h2>
-
-    <div class="row">
-      <div class="col-lg-3">
-        <div class="card">
-          <div class="card-header">
-            <h5>Filters</h5>
-            <button id="reset-filters" class="btn btn-outline-secondary btn-sm">Reset</button>
-          </div>
-          <div class="card-body">
-            <form id="filter-form">
-              <div class="mb-3">
-                <label for="canton-select" class="form-label">Kanton</label>
-                <select class="form-select" id="canton-select">
-                  <option value="">Alle</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label for="rooms-select" class="form-label">Zimmer</label>
-                <select class="form-select" id="rooms-select">
-                  <option value="">Alle</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label for="price-select" class="form-label">Mietpreisklasse</label>
-                <select class="form-select" id="price-select">
-                  <option value="">Alle</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label for="area-select" class="form-label">Wohnungsfläche</label>
-                <select class="form-select" id="area-select">
-                  <option value="">Alle</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label for="year-select" class="form-label">Jahr</label>
-                <select class="form-select" id="year-select">
-                  <option value="">Alle</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label for="sort-select" class="form-label">Sortieren nach</label>
-                <select class="form-select" id="sort-select">
-                  <option value="">Standard</option>
-                  <option value="value_desc">Anzahl absteigend</option>
-                  <option value="value_asc">Anzahl aufsteigend</option>
-                  <option value="canton_asc">Kanton A-Z</option>
-                </select>
-              </div>
-              <button type="button" id="reset-filters" class="btn btn-outline-secondary btn-sm">Zurücksetzen</button>
-            </form>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-9">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div id="result-count">0 results</div>
-          <div>
-            <button id="view-toggle" class="btn btn-outline-primary">Card View</button>
-          </div>
-        </div>
-        <div id="results-container">
-          <!-- Results will be populated by JS -->
-        </div>
-        <nav id="pagination-nav" aria-label="Page navigation">
-          <!-- Pagination will be populated by JS -->
-        </nav>
+  <section class="search-hero">
+    <div class="container">
+      <div class="search-hero-content">
+        <span class="hero-badge">Apartment Search</span>
+        <h1 class="search-title">Search rental apartment statistics across Switzerland</h1>
+        <p class="search-text">
+          Filter by canton, rooms, rent range, apartment size, and year to explore the dataset
+          in a clean and flexible way.
+        </p>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Apartment Details Modal -->
-  <div class="modal fade" id="apartmentModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
+  <main class="dashboard-main">
+    <div class="container">
+      <div class="row g-4 align-items-start">
+        <div class="col-lg-4 col-xl-3">
+          <aside class="dashboard-card filter-panel sticky-lg-top">
+            <div class="card-top mb-3">
+              <div>
+                <span class="section-kicker">Filters</span>
+                <h3 class="mb-0">Refine your search</h3>
+              </div>
+              <button id="reset-filters" class="btn btn-light btn-sm">Reset</button>
+            </div>
+
+            <form id="filter-form" class="filter-form">
+              <div class="mb-3">
+                <label for="canton-select" class="form-label">Canton</label>
+                <select class="form-select" id="canton-select">
+                  <option value="">All</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="rooms-select" class="form-label">Rooms</label>
+                <select class="form-select" id="rooms-select">
+                  <option value="">All</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="price-select" class="form-label">Rent range</label>
+                <select class="form-select" id="price-select">
+                  <option value="">All</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="area-select" class="form-label">Living area</label>
+                <select class="form-select" id="area-select">
+                  <option value="">All</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="year-select" class="form-label">Year</label>
+                <select class="form-select" id="year-select">
+                  <option value="">All</option>
+                </select>
+              </div>
+
+              <div class="mb-0">
+                <label for="sort-select" class="form-label">Sort by</label>
+                <select class="form-select" id="sort-select">
+                  <option value="">Default</option>
+                  <option value="value_desc">Count descending</option>
+                  <option value="value_asc">Count ascending</option>
+                  <option value="canton_asc">Canton A-Z</option>
+                </select>
+              </div>
+            </form>
+          </aside>
+        </div>
+
+        <div class="col-lg-8 col-xl-9">
+          <section class="dashboard-card results-shell">
+            <div class="results-toolbar">
+              <div>
+                <span class="section-kicker">Results</span>
+                <h3 class="mb-1">Apartment statistics</h3>
+                <div id="result-count" class="results-count">0 results</div>
+              </div>
+
+              <div class="results-actions">
+                <button id="view-toggle" class="btn btn-outline-primary">Card View</button>
+              </div>
+            </div>
+
+            <div id="results-container" class="results-content">
+              <!-- Results will be populated by JS -->
+            </div>
+
+            <nav id="pagination-nav" class="pagination-wrap mt-4" aria-label="Page navigation">
+              <!-- Pagination will be populated by JS -->
+            </nav>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal fade" id="apartmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content search-modal">
+        <div class="modal-header border-0 pb-0">
           <h5 class="modal-title" id="apartmentModalLabel">Apartment Details</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body" id="apartment-details">
+        <div class="modal-body pt-2" id="apartment-details">
           <!-- Details will be populated by JS -->
         </div>
       </div>

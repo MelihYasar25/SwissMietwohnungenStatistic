@@ -1,23 +1,24 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Compare - Swiss Rental Apartments Statistics</title>
+  <title>Compare - Swiss Rental Apartments</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <nav class="navbar navbar-expand-lg navbar-dark custom-navbar">
     <div class="container">
-      <a class="navbar-brand" href="index.html">Swiss Rental Apartments</a>
+      <a class="navbar-brand fw-bold" href="index.html">Swiss Rental Apartments</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
+
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
           <li class="nav-item">
             <a class="nav-link" href="index.html">Dashboard</a>
           </li>
@@ -41,13 +42,37 @@
     </div>
   </nav>
 
-  <div class="container my-4">
-    <h2>Compare Apartments</h2>
-
-    <div id="comparison-container">
-      <!-- Comparison will be populated by JS -->
+  <section class="search-hero">
+    <div class="container">
+      <div class="search-hero-content">
+        <span class="hero-badge">Compare</span>
+        <h1 class="search-title">Compare apartment categories side by side</h1>
+        <p class="search-text mx-auto">
+          Review your selected apartment categories in one place and compare
+          canton, rooms, rent range, area, year, and apartment count more easily.
+        </p>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <main class="dashboard-main">
+    <div class="container">
+      <section class="dashboard-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">Comparison</span>
+            <h2>Your selected apartments</h2>
+          </div>
+        </div>
+
+        <div class="dashboard-card compare-shell">
+          <div id="comparison-container" class="comparison-content">
+            <!-- Comparison will be populated by JS -->
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
 
   <div id="toast-container" class="toast-container"></div>
 

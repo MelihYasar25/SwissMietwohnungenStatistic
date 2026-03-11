@@ -1,4 +1,5 @@
 let allApartments = [];
+let statsCharts = [];
 
 async function initStats() {
   showLoading();
@@ -7,186 +8,436 @@ async function initStats() {
     allApartments = await fetchApartments();
 
     if (!allApartments || allApartments.length === 0) {
-      showError('Keine Daten verfügbar.');
+      showError('No data available.');
       return;
     }
 
-    renderTotalStats();
-    renderCantonStats();
-    renderYearStats();
-    renderRoomsDistribution();
-    renderPriceRange();
+    clearLoading();
+    renderSummaryStats();
+    renderInsights();
+    renderYearTrendChart();
+    renderCantonChart();
+    renderRoomsChart();
+    renderPriceChart();
   } catch (error) {
     console.error('Stats init error:', error);
-    showError('Fehler beim Laden der Daten.');
+    showError('Error loading statistics data.');
   }
 }
 
 function showLoading() {
-  document.getElementById('total-stats').innerHTML =
-    '<div class="text-center"><div class="loading-spinner"></div></div>';
+  const ids = [
+    'stat-total-entries',
+    'stat-total-apartments',
+    'stat-cantons',
+    'stat-years',
+    'stats-insights'
+  ];
+
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.innerHTML = '<div class="text-center"><div class="loading-spinner"></div></div>';
+    }
+  });
+}
+
+function clearLoading() {
+  const insightEl = document.getElementById('stats-insights');
+  if (insightEl) insightEl.innerHTML = '';
 }
 
 function showError(message) {
-  document.getElementById('total-stats').innerHTML =
-    `<div class="alert alert-danger">${message}</div>`;
+  const container = document.querySelector('.dashboard-main .container');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="dashboard-card">
+      <div class="alert alert-danger mb-0">${message}</div>
+    </div>
+  `;
+}
+
+function getColumns() {
+  if (typeof CONFIG !== 'undefined' && CONFIG.COLUMNS) {
+    return {
+      canton: CONFIG.COLUMNS.canton || 'canton',
+      rooms: CONFIG.COLUMNS.rooms || 'rooms',
+      priceRange: CONFIG.COLUMNS.price_range || 'price_range',
+      area: CONFIG.COLUMNS.area_m2_range || 'area_m2_range',
+      year: CONFIG.COLUMNS.year || 'year',
+      value: CONFIG.COLUMNS.value || 'value'
+    };
+  }
+
+  return {
+    canton: 'canton',
+    rooms: 'rooms',
+    priceRange: 'price_range',
+    area: 'area_m2_range',
+    year: 'year',
+    value: 'value'
+  };
+}
+
+function getValue(item, key) {
+  return item?.[key];
+}
+
+function toNumber(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString('en-CH');
 }
 
 function getTotalCount() {
-  return allApartments.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+  const cols = getColumns();
+  return allApartments.reduce((sum, item) => sum + toNumber(getValue(item, cols.value)), 0);
 }
 
-function renderTotalStats() {
-  const totalRows = allApartments.length;
+function aggregateBy(key) {
+  const cols = getColumns();
+  const result = {};
+
+  allApartments.forEach(item => {
+    const group = getValue(item, key);
+    const value = toNumber(getValue(item, cols.value));
+
+    if (group === null || group === undefined || group === '') return;
+
+    if (!result[group]) result[group] = 0;
+    result[group] += value;
+  });
+
+  return result;
+}
+
+function renderSummaryStats() {
+  const cols = getColumns();
+
+  const totalEntries = allApartments.length;
   const totalApartments = getTotalCount();
-  const uniqueCantons = [...new Set(allApartments.map(item => item.canton))].length;
-  const uniqueYears = [...new Set(allApartments.map(item => item.year))].length;
 
-  const html = `
-    <div class="h4 mb-2">${totalApartments.toLocaleString('de-CH')}</div>
-    <small class="text-muted">Total gezählte Mietwohnungen</small>
-    <hr>
-    <div class="row text-center">
-      <div class="col-6 mb-3">
-        <div class="h5 mb-0">${totalRows.toLocaleString('de-CH')}</div>
-        <small class="text-muted">Datensätze</small>
-      </div>
-      <div class="col-6 mb-3">
-        <div class="h5 mb-0">${uniqueCantons}</div>
-        <small class="text-muted">Kantone</small>
-      </div>
-      <div class="col-12">
-        <div class="h5 mb-0">${uniqueYears}</div>
-        <small class="text-muted">Jahre</small>
-      </div>
-    </div>
-  `;
+  const uniqueCantons = new Set(
+    allApartments.map(item => getValue(item, cols.canton)).filter(Boolean)
+  ).size;
 
-  document.getElementById('total-stats').innerHTML = html;
+  const years = allApartments
+    .map(item => Number(getValue(item, cols.year)))
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+
+  const minYear = years.length ? years[0] : '-';
+  const maxYear = years.length ? years[years.length - 1] : '-';
+
+  const totalEntriesEl = document.getElementById('stat-total-entries');
+  const totalApartmentsEl = document.getElementById('stat-total-apartments');
+  const cantonsEl = document.getElementById('stat-cantons');
+  const yearsEl = document.getElementById('stat-years');
+
+  if (totalEntriesEl) totalEntriesEl.textContent = formatNumber(totalEntries);
+  if (totalApartmentsEl) totalApartmentsEl.textContent = formatNumber(totalApartments);
+  if (cantonsEl) cantonsEl.textContent = formatNumber(uniqueCantons);
+  if (yearsEl) yearsEl.textContent = years.length ? `${minYear}–${maxYear}` : '-';
 }
 
-function renderCantonStats() {
-  const cantonMap = {};
+function renderInsights() {
+  const cols = getColumns();
 
-  allApartments.forEach(item => {
-    if (!cantonMap[item.canton]) {
-      cantonMap[item.canton] = 0;
+  const cantonTotals = aggregateBy(cols.canton);
+  const roomTotals = aggregateBy(cols.rooms);
+  const priceTotals = aggregateBy(cols.priceRange);
+  const yearTotals = aggregateBy(cols.year);
+
+  const topCanton = getTopEntry(cantonTotals);
+  const topRoom = getTopEntry(roomTotals);
+  const topPrice = getTopEntry(priceTotals);
+  const latestYear = getLatestNumericKey(yearTotals);
+
+  const insights = [
+    {
+      title: 'Top canton',
+      text: topCanton
+        ? `${topCanton.label} has the highest apartment count with ${formatNumber(topCanton.value)} apartments.`
+        : 'No canton data available.'
+    },
+    {
+      title: 'Most common room category',
+      text: topRoom
+        ? `${topRoom.label} is the most represented room category with ${formatNumber(topRoom.value)} apartments.`
+        : 'No room data available.'
+    },
+    {
+      title: 'Most common rent range',
+      text: topPrice
+        ? `${topPrice.label} appears most often with ${formatNumber(topPrice.value)} apartments.`
+        : 'No rent range data available.'
+    },
+    {
+      title: 'Latest year in dataset',
+      text: latestYear
+        ? `The newest year available in the dataset is ${latestYear}.`
+        : 'No year data available.'
     }
-    cantonMap[item.canton] += Number(item.value) || 0;
-  });
+  ];
 
-  const cantonStats = Object.entries(cantonMap)
-    .map(([canton, count]) => ({ canton, count }))
-    .sort((a, b) => b.count - a.count);
+  const container = document.getElementById('stats-insights');
+  if (!container) return;
 
-  const maxCount = Math.max(...cantonStats.map(item => item.count), 1);
-
-  const html = cantonStats.map(stat => `
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <span>${stat.canton}</span>
-      <div class="d-flex align-items-center">
-        <div class="stats-bar flex-grow-1 me-2" style="width: 160px;">
-          <div class="stats-fill" style="width: ${(stat.count / maxCount) * 100}%"></div>
-        </div>
-        <span class="badge bg-primary">${stat.count.toLocaleString('de-CH')}</span>
-      </div>
+  container.innerHTML = insights.map(item => `
+    <div class="insight-card">
+      <h6>${escapeHtml(item.title)}</h6>
+      <p>${escapeHtml(item.text)}</p>
     </div>
   `).join('');
-
-  document.getElementById('canton-avg-rent').innerHTML = html || '<p>Keine Daten verfügbar</p>';
 }
 
-function renderYearStats() {
-  const yearMap = {};
+function renderYearTrendChart() {
+  const cols = getColumns();
+  const yearTotals = aggregateBy(cols.year);
 
-  allApartments.forEach(item => {
-    if (!yearMap[item.year]) {
-      yearMap[item.year] = 0;
+  const entries = Object.entries(yearTotals)
+    .map(([year, count]) => ({
+      label: Number(year),
+      value: count
+    }))
+    .filter(item => Number.isFinite(item.label))
+    .sort((a, b) => a.label - b.label);
+
+  createChart(
+    'yearTrendChart',
+    'line',
+    {
+      labels: entries.map(item => item.label),
+      datasets: [
+        {
+          label: 'Apartment count',
+          data: entries.map(item => item.value),
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.12)',
+          fill: true,
+          tension: 0.35,
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 5
+        }
+      ]
+    },
+    {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => formatNumber(value)
+          }
+        }
+      }
     }
-    yearMap[item.year] += Number(item.value) || 0;
-  });
-
-  const yearStats = Object.entries(yearMap)
-    .map(([year, count]) => ({ year, count }))
-    .sort((a, b) => Number(a.year) - Number(b.year));
-
-  const maxCount = Math.max(...yearStats.map(item => item.count), 1);
-
-  const html = yearStats.map(stat => `
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <span>${stat.year}</span>
-      <div class="d-flex align-items-center">
-        <div class="stats-bar flex-grow-1 me-2" style="width: 140px;">
-          <div class="stats-fill" style="width: ${(stat.count / maxCount) * 100}%"></div>
-        </div>
-        <span class="badge bg-primary">${stat.count.toLocaleString('de-CH')}</span>
-      </div>
-    </div>
-  `).join('');
-
-  document.getElementById('city-avg-rent').innerHTML = html || '<p>Keine Daten verfügbar</p>';
+  );
 }
 
-function renderRoomsDistribution() {
-  const roomsMap = {};
+function renderCantonChart() {
+  const cols = getColumns();
+  const cantonTotals = aggregateBy(cols.canton);
 
-  allApartments.forEach(item => {
-    if (!roomsMap[item.rooms]) {
-      roomsMap[item.rooms] = 0;
+  const topCantons = Object.entries(cantonTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
+  createChart(
+    'cantonChart',
+    'bar',
+    {
+      labels: topCantons.map(item => item[0]),
+      datasets: [
+        {
+          label: 'Apartment count',
+          data: topCantons.map(item => item[1]),
+          backgroundColor: '#3b82f6',
+          borderRadius: 10,
+          borderSkipped: false
+        }
+      ]
+    },
+    {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => formatNumber(value)
+          }
+        }
+      }
     }
-    roomsMap[item.rooms] += Number(item.value) || 0;
-  });
-
-  const total = getTotalCount();
-
-  const roomStats = Object.entries(roomsMap)
-    .map(([rooms, count]) => ({ rooms, count }))
-    .sort((a, b) => a.rooms.localeCompare(b.rooms, 'de', { numeric: true }));
-
-  const html = roomStats.map(stat => `
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <span>${stat.rooms}</span>
-      <div class="d-flex align-items-center">
-        <div class="stats-bar flex-grow-1 me-2" style="width: 120px;">
-          <div class="stats-fill" style="width: ${(stat.count / total) * 100}%"></div>
-        </div>
-        <span class="badge bg-primary">${stat.count.toLocaleString('de-CH')}</span>
-      </div>
-    </div>
-  `).join('');
-
-  document.getElementById('rooms-distribution').innerHTML = html || '<p>Keine Daten verfügbar</p>';
+  );
 }
 
-function renderPriceRange() {
-  const priceMap = {};
+function renderRoomsChart() {
+  const cols = getColumns();
+  const roomTotals = aggregateBy(cols.rooms);
 
-  allApartments.forEach(item => {
-    if (!priceMap[item.price_range]) {
-      priceMap[item.price_range] = 0;
+  const entries = Object.entries(roomTotals)
+    .sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'en', { numeric: true }));
+
+  createChart(
+    'roomsChart',
+    'doughnut',
+    {
+      labels: entries.map(item => item[0]),
+      datasets: [
+        {
+          data: entries.map(item => item[1]),
+          backgroundColor: [
+            '#2563eb',
+            '#60a5fa',
+            '#818cf8',
+            '#38bdf8',
+            '#22c55e',
+            '#f59e0b',
+            '#ef4444',
+            '#a855f7',
+            '#14b8a6'
+          ],
+          borderWidth: 0
+        }
+      ]
+    },
+    {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
     }
-    priceMap[item.price_range] += Number(item.value) || 0;
+  );
+}
+
+function renderPriceChart() {
+  const cols = getColumns();
+  const priceTotals = aggregateBy(cols.priceRange);
+
+  const entries = Object.entries(priceTotals)
+    .sort((a, b) => getPriceOrder(a[0]) - getPriceOrder(b[0]));
+
+  createChart(
+    'priceChart',
+    'bar',
+    {
+      labels: entries.map(item => item[0]),
+      datasets: [
+        {
+          label: 'Apartment count',
+          data: entries.map(item => item[1]),
+          backgroundColor: '#6366f1',
+          borderRadius: 10,
+          borderSkipped: false
+        }
+      ]
+    },
+    {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => formatNumber(value)
+          }
+        }
+      }
+    }
+  );
+}
+
+function createChart(canvasId, type, data, options) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const existing = statsCharts.find(chart => chart.canvas.id === canvasId);
+  if (existing) {
+    existing.destroy();
+    statsCharts = statsCharts.filter(chart => chart.canvas.id !== canvasId);
+  }
+
+  const chart = new Chart(canvas, {
+    type,
+    data,
+    options
   });
 
-  const total = getTotalCount();
+  statsCharts.push(chart);
+}
 
-  const priceStats = Object.entries(priceMap)
-    .map(([range, count]) => ({ range, count }))
-    .sort((a, b) => b.count - a.count);
+function getTopEntry(objectMap) {
+  const entries = Object.entries(objectMap);
+  if (!entries.length) return null;
 
-  const html = priceStats.map(stat => `
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <span>${stat.range}</span>
-      <div class="d-flex align-items-center">
-        <div class="stats-bar flex-grow-1 me-2" style="width: 160px;">
-          <div class="stats-fill" style="width: ${(stat.count / total) * 100}%"></div>
-        </div>
-        <span class="badge bg-primary">${stat.count.toLocaleString('de-CH')}</span>
-      </div>
-    </div>
-  `).join('');
+  const [label, value] = entries.sort((a, b) => b[1] - a[1])[0];
+  return { label, value };
+}
 
-  document.getElementById('price-range').innerHTML = html || '<p>Keine Daten verfügbar</p>';
+function getLatestNumericKey(objectMap) {
+  const keys = Object.keys(objectMap)
+    .map(Number)
+    .filter(Number.isFinite)
+    .sort((a, b) => b - a);
+
+  return keys.length ? keys[0] : null;
+}
+
+function getPriceOrder(priceRange) {
+  const order = [
+    'unter 400 Fr.',
+    '400 - 599 Fr.',
+    '600 - 799 Fr.',
+    '800 - 999 Fr.',
+    '1000 - 1199 Fr.',
+    '1200 - 1399 Fr.',
+    '1400 - 1599 Fr.',
+    '1600 - 1799 Fr.',
+    '1800 - 1999 Fr.',
+    '2000 - 2399 Fr.',
+    '2400 Fr. und +',
+    'Keine bewohnte Mietwohnung',
+    'Angabe fehlt'
+  ];
+
+  const index = order.indexOf(priceRange);
+  return index === -1 ? 999 : index;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 document.addEventListener('DOMContentLoaded', initStats);
