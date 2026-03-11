@@ -45,7 +45,7 @@ function loadComparison() {
 
   if (!comparisonApartments.length) {
     comparisonApartments = [...allApartments]
-      .sort((a, b) => Number(b.value) - Number(a.value))
+      .sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))
       .slice(0, 3);
   }
 }

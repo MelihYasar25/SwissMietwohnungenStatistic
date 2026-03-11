@@ -14,7 +14,6 @@ async function initApp() {
 
     renderSummaryCards();
     renderPopularCantons();
-    renderLatestApartments();
   } catch (error) {
     console.error('Init error:', error);
     showError('Failed to load data.');

@@ -17,6 +17,7 @@ async function initSearch() {
     }
 
     populateFilters();
+    applyQuizFilters();
     setupEventListeners();
     applyFilters();
   } catch (error) {
@@ -61,13 +62,23 @@ function populateSelect(id, values, defaultLabel) {
 }
 
 function getUniqueSorted(data, key) {
-  return [...new Set(data.map(item => item[key]).filter(Boolean))];
+  return [...new Set(data.map(item => item[key]).filter(Boolean))]
+    .sort((a, b) => String(a).localeCompare(String(b), 'en', { numeric: true }));
 }
 
 function setupEventListeners() {
   document.getElementById('filter-form').addEventListener('change', applyFilters);
   document.getElementById('reset-filters').addEventListener('click', resetFilters);
   document.getElementById('view-toggle').addEventListener('click', toggleView);
+}
+function toggleFavorite(id) {
+  if (Utils.isFavorite(id)) {
+    Utils.removeFromFavorites(id);
+  } else {
+    Utils.addToFavorites(id);
+  }
+
+  renderResults();
 }
 
 function getFilterValues() {
@@ -329,6 +340,27 @@ function goToPage(page) {
     top: 0,
     behavior: 'smooth'
   });
+}
+function applyQuizFilters() {
+  const params = new URLSearchParams(window.location.search);
+
+  if (!params.get("fromQuiz")) return;
+
+  const stored = sessionStorage.getItem("quizFilters");
+  if (!stored) return;
+
+  try {
+    const filters = JSON.parse(stored);
+
+    if (filters.canton) document.getElementById("canton-select").value = filters.canton;
+    if (filters.rooms) document.getElementById("rooms-select").value = filters.rooms;
+    if (filters.price_range) document.getElementById("price-select").value = filters.price_range;
+    if (filters.area_m2_range) document.getElementById("area-select").value = filters.area_m2_range;
+    if (filters.year) document.getElementById("year-select").value = filters.year;
+
+  } catch (e) {
+    console.warn("Invalid quiz filters");
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initSearch);

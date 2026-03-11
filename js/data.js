@@ -67,7 +67,12 @@ function parseRentalDataset(json) {
   return rows;
 }
 
+let cachedApartments = null;
+
 async function fetchApartments() {
+
+  if (cachedApartments) return cachedApartments;
+
   try {
     const response = await fetch('./data/rental_data.json');
 
@@ -79,6 +84,7 @@ async function fetchApartments() {
     const rows = parseRentalDataset(json);
 
     console.log('Parsed rows:', rows);
+    cachedApartments = rows;
     return rows;
   } catch (error) {
     console.error('Error fetching rental data:', error);
