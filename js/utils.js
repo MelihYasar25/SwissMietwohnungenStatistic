@@ -2,7 +2,7 @@
 
 // Format currency in CHF
 function formatCHF(amount) {
-  return new Intl.NumberFormat('de-CH', {
+  return new Intl.NumberFormat('en-CH', {
     style: 'currency',
     currency: 'CHF'
   }).format(amount);

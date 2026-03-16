@@ -40,9 +40,9 @@ function renderSummaryCards() {
     allApartments.reduce((sum, item) => sum + (Number(item[window.CONFIG.COLUMNS.rooms]) || 0), 0) / total;
 
   const cards = [
-    { title: 'Datensätze', value: total, icon: '🏠' },
-    { title: 'Kantone', value: uniqueCantons, icon: '🗺️' },
-    { title: 'Ø Zimmer', value: avgRooms.toFixed(1), icon: '📐' }
+    { title: 'Entries', value: total, icon: '🏠' },
+    { title: 'Cantons', value: uniqueCantons, icon: '🗺️' },
+    { title: 'Ø Rooms', value: avgRooms.toFixed(1), icon: '📐' }
   ];
 
   const html = cards.map(card => `

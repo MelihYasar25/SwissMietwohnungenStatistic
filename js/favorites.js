@@ -143,7 +143,7 @@ function addToComparison(id) {
   let items = [];
 
   try {
-    items = JSON.parse(sessionStorage.getItem('comparisonItems')) || [];
+    items = JSON.parse(localStorage.getItem('comparisonItems')) || [];
   } catch (error) {
     items = [];
   }
@@ -163,7 +163,7 @@ function addToComparison(id) {
   }
 
   items.push(id);
-  sessionStorage.setItem('comparisonItems', JSON.stringify(items));
+  localStorage.setItem('comparisonItems', JSON.stringify(items));
 
   if (window.Utils && typeof Utils.showToast === 'function') {
     Utils.showToast('Category added to comparison list.', 'success');

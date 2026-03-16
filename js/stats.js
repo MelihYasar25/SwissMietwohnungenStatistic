@@ -412,7 +412,7 @@ function getLatestNumericKey(objectMap) {
 
 function getPriceOrder(priceRange) {
   const order = [
-    'unter 400 Fr.',
+    'under 400 Fr.',
     '400 - 599 Fr.',
     '600 - 799 Fr.',
     '800 - 999 Fr.',
@@ -422,9 +422,9 @@ function getPriceOrder(priceRange) {
     '1600 - 1799 Fr.',
     '1800 - 1999 Fr.',
     '2000 - 2399 Fr.',
-    '2400 Fr. und +',
-    'Keine bewohnte Mietwohnung',
-    'Angabe fehlt'
+    '2400 Fr. and +',
+    'No occupied rental apartment',
+    'No data'
   ];
 
   const index = order.indexOf(priceRange);

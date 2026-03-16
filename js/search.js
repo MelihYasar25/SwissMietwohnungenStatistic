@@ -12,7 +12,7 @@ async function initSearch() {
     console.log('Search data:', allApartments);
 
     if (!allApartments || allApartments.length === 0) {
-      showError('Keine Daten verfügbar.');
+      showError('No data.');
       return;
     }
 
@@ -22,13 +22,13 @@ async function initSearch() {
     applyFilters();
   } catch (error) {
     console.error('Search init error:', error);
-    showError('Fehler beim Laden der Daten.');
+    showError('Error loading data.');
   }
 }
 
 function showLoading() {
   document.getElementById('results-container').innerHTML =
-    '<div class="text-center"><div class="loading-spinner"></div> Daten werden geladen...</div>';
+    '<div class="text-center"><div class="loading-spinner"></div> Loading data...</div>';
 }
 
 function hideLoading() {
@@ -40,11 +40,11 @@ function showError(message) {
 }
 
 function populateFilters() {
-  populateSelect('canton-select', getUniqueSorted(allApartments, 'canton'), 'Alle');
-  populateSelect('rooms-select', getUniqueSorted(allApartments, 'rooms'), 'Alle');
-  populateSelect('price-select', getUniqueSorted(allApartments, 'price_range'), 'Alle');
-  populateSelect('area-select', getUniqueSorted(allApartments, 'area_m2_range'), 'Alle');
-  populateSelect('year-select', getUniqueSorted(allApartments, 'year'), 'Alle');
+  populateSelect('canton-select', getUniqueSorted(allApartments, 'canton'), 'All');
+  populateSelect('rooms-select', getUniqueSorted(allApartments, 'rooms'), 'All');
+  populateSelect('price-select', getUniqueSorted(allApartments, 'price_range'), 'All');
+  populateSelect('area-select', getUniqueSorted(allApartments, 'area_m2_range'), 'All');
+  populateSelect('year-select', getUniqueSorted(allApartments, 'year'), 'All');
 }
 
 function populateSelect(id, values, defaultLabel) {
@@ -81,6 +81,31 @@ function toggleFavorite(id) {
   renderResults();
 }
 
+function addToComparison(id) {
+  let items = [];
+
+  try {
+    items = JSON.parse(localStorage.getItem('comparisonItems')) || [];
+  } catch (error) {
+    items = [];
+  }
+
+  if (items.includes(id)) {
+    Utils.showToast('This category is already in the comparison list.', 'info');
+    return;
+  }
+
+  if (items.length >= 4) {
+    Utils.showToast('You can compare a maximum of 4 categories.', 'warning');
+    return;
+  }
+
+  items.push(id);
+  localStorage.setItem('comparisonItems', JSON.stringify(items));
+
+  Utils.showToast('Category added to comparison list.', 'success');
+}
+
 function getFilterValues() {
   return {
     canton: document.getElementById('canton-select')?.value || '',
@@ -99,7 +124,11 @@ function applyFilters() {
     if ((Number(item.value) || 0) <= 0) return false;
     if (filters.canton && item.canton !== filters.canton) return false;
     if (filters.rooms && item.rooms !== filters.rooms) return false;
-    if (filters.price_range && item.price_range !== filters.price_range) return false;
+    if (filters.price_range) {
+      if (getPriceOrder(item.price_range) > getPriceOrder(filters.price_range)) {
+        return false;
+      }
+    }
     if (filters.area_m2_range && item.area_m2_range !== filters.area_m2_range) return false;
     if (filters.year && item.year !== filters.year) return false;
     return true;
@@ -136,7 +165,7 @@ function resetFilters() {
 function toggleView() {
   viewMode = viewMode === 'cards' ? 'table' : 'cards';
   document.getElementById('view-toggle').textContent =
-    viewMode === 'cards' ? 'Tabellenansicht' : 'Kartenansicht';
+    viewMode === 'cards' ? 'Table View' : 'Card view';
   renderResults();
 }
 
@@ -146,13 +175,13 @@ function renderResults() {
   const pageItems = filteredApartments.slice(start, end);
 
   document.getElementById('result-count').textContent =
-    `${filteredApartments.length} Ergebnisse`;
+    `${filteredApartments.length} results`;
 
   if (filteredApartments.length === 0) {
     document.getElementById('results-container').innerHTML = `
       <div class="empty-state">
-        <h4>Keine Ergebnisse gefunden</h4>
-        <p>Versuche andere Filter.</p>
+        <h4>No results found</h4>
+        <p>Try different filters.</p>
       </div>
     `;
     return;
@@ -176,23 +205,23 @@ function renderCards(items) {
               <span class="badge bg-primary-subtle text-primary border">${item.year}</span>
             </div>
             <div class="text-end">
-              <div class="small text-muted">Anzahl</div>
+              <div class="small text-muted">Count</div>
               <div class="fs-5 fw-bold text-primary">${Number(item.value).toLocaleString('de-CH')}</div>
             </div>
           </div>
 
           <div class="mb-3">
-            <div class="mb-2"><strong>Zimmer:</strong> ${item.rooms}</div>
-            <div class="mb-2"><strong>Mietpreisklasse:</strong> ${item.price_range}</div>
-            <div class="mb-2"><strong>Wohnungsfläche:</strong> ${item.area_m2_range}</div>
+            <div class="mb-2"><strong>Rooms:</strong> ${item.rooms}</div>
+            <div class="mb-2"><strong>Rent range:</strong> ${item.price_range}</div>
+            <div class="mb-2"><strong>Living area:</strong> ${item.area_m2_range}</div>
           </div>
 
           <div class="mt-auto d-flex gap-2 flex-wrap">
             <button class="btn btn-outline-primary btn-sm" onclick="toggleFavorite(${item.id})">
-              ${Utils.isFavorite(item.id) ? '★ Favorit' : '☆ Favorit'}
+              ${Utils.isFavorite(item.id) ? '★ Favorite' : '☆ Favorite'}
             </button>
             <button class="btn btn-outline-secondary btn-sm" onclick="addToComparison(${item.id})">
-              Vergleichen
+              Compare
             </button>
           </div>
         </div>
@@ -250,7 +279,7 @@ function renderPagination() {
   html += `
     <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
       <a class="page-link rounded-pill px-3" href="#" onclick="goToPage(${currentPage - 1}); return false;">
-        ← Zurück
+        ← Previous
       </a>
     </li>
   `;
@@ -278,7 +307,7 @@ function renderPagination() {
   html += `
     <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
       <a class="page-link rounded-pill px-3" href="#" onclick="goToPage(${currentPage + 1}); return false;">
-        Weiter →
+        Next →
       </a>
     </li>
   `;
@@ -288,7 +317,7 @@ function renderPagination() {
   paginationNav.innerHTML = `
     <div class="d-flex flex-column align-items-center mt-4">
       <div class="text-muted small mb-2">
-        Seite ${currentPage} von ${totalPages}
+        Page ${currentPage} of ${totalPages}
       </div>
       ${html}
     </div>
@@ -346,7 +375,7 @@ function applyQuizFilters() {
 
   if (!params.get("fromQuiz")) return;
 
-  const stored = sessionStorage.getItem("quizFilters");
+  const stored = localStorage.getItem("quizFilters");
   if (!stored) return;
 
   try {
@@ -361,6 +390,27 @@ function applyQuizFilters() {
   } catch (e) {
     console.warn("Invalid quiz filters");
   }
+}
+
+function getPriceOrder(priceRange) {
+  const order = [
+    'unter 400 Fr.',
+    '400 - 599 Fr.',
+    '600 - 799 Fr.',
+    '800 - 999 Fr.',
+    '1000 - 1199 Fr.',
+    '1200 - 1399 Fr.',
+    '1400 - 1599 Fr.',
+    '1600 - 1799 Fr.',
+    '1800 - 1999 Fr.',
+    '2000 - 2399 Fr.',
+    '2400 Fr. und +',
+    'Keine bewohnte Mietwohnung',
+    'Angabe fehlt'
+  ];
+
+  const index = order.indexOf(priceRange);
+  return index === -1 ? 999 : index;
 }
 
 document.addEventListener('DOMContentLoaded', initSearch);

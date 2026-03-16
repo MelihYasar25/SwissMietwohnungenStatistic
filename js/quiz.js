@@ -314,7 +314,7 @@ function getRecommendations() {
   const yearKey = CONFIG.COLUMNS.year;
   const valueKey = CONFIG.COLUMNS.value;
 
-  let filtered = [...allApartments];
+  let filtered = allApartments.filter(item => (Number(item[valueKey]) || 0) > 0);
 
   if (answers.canton) {
     filtered = filtered.filter(item => item[cantonKey] === answers.canton);
@@ -325,17 +325,11 @@ function getRecommendations() {
   }
 
   if (answers.budget) {
-    filtered = filtered.filter(item => {
-      const apartmentPrice = item[priceKey];
-      return getPriceOrder(apartmentPrice) <= getPriceOrder(answers.budget);
-    });
+    filtered = filtered.filter(item => item[priceKey] === answers.budget);
   }
 
   if (answers.area) {
-    filtered = filtered.filter(item => {
-      const apartmentArea = item[areaKey];
-      return getAreaOrder(apartmentArea) <= getAreaOrder(answers.area);
-    });
+    filtered = filtered.filter(item => item[areaKey] === answers.area);
   }
 
   if (answers.year) {
@@ -359,7 +353,7 @@ function comparePriceRanges(a, b) {
 
 function getPriceOrder(priceRange) {
   const order = [
-    'unter 400 Fr.',
+    'under 400 Fr.',
     '400 - 599 Fr.',
     '600 - 799 Fr.',
     '800 - 999 Fr.',
@@ -370,8 +364,8 @@ function getPriceOrder(priceRange) {
     '1800 - 1999 Fr.',
     '2000 - 2399 Fr.',
     '2400 Fr. und +',
-    'Keine bewohnte Mietwohnung',
-    'Angabe fehlt'
+    'No occupied rental apartment',
+    'No data'
   ];
 
   const index = order.indexOf(priceRange);
@@ -430,13 +424,13 @@ function renderResults(results) {
   }
 
   const total = results.reduce((sum, item) => sum + (Number(item[valueKey]) || 0), 0);
-  const topResults = results.slice(0, 6);
+  const topResults = results.slice(0, Math.min(results.length, 6));
 
   recommendationsEl.innerHTML = `
     <div class="result-summary-card">
       <div class="summary-badge">Your result</div>
       <h2>${total.toLocaleString('en-CH')}</h2>
-      <p>Apartments match your selected criteria</p>
+      <p><p>Total apartments in matching categories</p></p>
     </div>
 
     <div class="recommendation-grid">
@@ -488,7 +482,7 @@ function applyFilters() {
     year: answers.year || ''
   };
 
-  sessionStorage.setItem('quizFilters', JSON.stringify(searchFilters));
+  localStorage.setItem('quizFilters', JSON.stringify(searchFilters));
   window.location.href = 'search.html?fromQuiz=true';
 }
 
