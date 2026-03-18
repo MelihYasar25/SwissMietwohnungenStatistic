@@ -1,6 +1,3 @@
-// Utility functions
-
-// Format currency in CHF
 function formatCHF(amount) {
   return new Intl.NumberFormat('en-CH', {
     style: 'currency',
@@ -8,22 +5,18 @@ function formatCHF(amount) {
   }).format(amount);
 }
 
-// Format date
 function formatDate(dateString) {
   if (!dateString) return 'Not available';
   const date = new Date(dateString);
   return date.toLocaleDateString('en-GB');
 }
 
-// Calculate price per square meter
 function calculatePricePerSqm(price, area) {
   if (!price || !area || area === 0) return 0;
   return price / area;
 }
 
-// Show toast message
 function showToast(message, type = 'info') {
-  // Simple toast implementation using Bootstrap
   const toastContainer = document.getElementById('toast-container');
   if (!toastContainer) return;
 
@@ -46,18 +39,15 @@ function showToast(message, type = 'info') {
   });
 }
 
-// Get favorites from localStorage
 function getFavorites() {
   const favorites = localStorage.getItem('favorites');
   return favorites ? JSON.parse(favorites) : [];
 }
 
-// Save favorites to localStorage
 function saveFavorites(favorites) {
   localStorage.setItem('favorites', JSON.stringify(favorites));
 }
 
-// Add to favorites
 function addToFavorites(apartmentId) {
   const favorites = getFavorites();
   if (!favorites.includes(apartmentId)) {
@@ -67,7 +57,6 @@ function addToFavorites(apartmentId) {
   }
 }
 
-// Remove from favorites
 function removeFromFavorites(apartmentId) {
   const favorites = getFavorites();
   const index = favorites.indexOf(apartmentId);
@@ -78,18 +67,15 @@ function removeFromFavorites(apartmentId) {
   }
 }
 
-// Check if apartment is favorite
 function isFavorite(apartmentId) {
   const favorites = getFavorites();
   return favorites.includes(apartmentId);
 }
 
-// Get unique values for filters
 function getUniqueValues(data, key) {
   return [...new Set(data.map(item => item[key]).filter(val => val))];
 }
 
-// Filter apartments based on criteria
 function filterApartments(apartments, filters) {
   return apartments.filter(apt => {
     if (filters.canton && apt[CONFIG.COLUMNS.canton] !== filters.canton) return false;
@@ -109,7 +95,6 @@ function filterApartments(apartments, filters) {
   });
 }
 
-// Sort apartments
 function sortApartments(apartments, sortBy) {
   return apartments.sort((a, b) => {
     switch (sortBy) {
@@ -131,7 +116,6 @@ function sortApartments(apartments, sortBy) {
   });
 }
 
-// Calculate statistics
 function calculateStats(apartments) {
   if (!apartments.length) return {};
 
@@ -150,7 +134,6 @@ function calculateStats(apartments) {
   };
 }
 
-// Group by canton
 function groupByCanton(apartments) {
   const groups = {};
   apartments.forEach(apt => {
@@ -161,7 +144,6 @@ function groupByCanton(apartments) {
   return groups;
 }
 
-// Group by city
 function groupByCity(apartments) {
   const groups = {};
   apartments.forEach(apt => {
@@ -172,7 +154,6 @@ function groupByCity(apartments) {
   return groups;
 }
 
-// Export utilities
 window.Utils = {
   formatCHF,
   formatDate,

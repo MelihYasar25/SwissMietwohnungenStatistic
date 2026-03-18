@@ -16,11 +16,9 @@
 body {
   font-family: "Inter", "Segoe UI", sans-serif;
   background:
-    radial-gradient(
-      circle at top left,
+    radial-gradient(circle at top left,
       rgba(37, 99, 235, 0.05),
-      transparent 25%
-    ),
+      transparent 25%),
     linear-gradient(180deg, #f8fafc 0%, #f3f6fb 100%);
   color: var(--text);
 }
@@ -37,16 +35,12 @@ body {
   overflow: hidden;
   padding: 6rem 0 5rem;
   background:
-    radial-gradient(
-      circle at top left,
+    radial-gradient(circle at top left,
       rgba(255, 255, 255, 0.18),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at bottom right,
+      transparent 30%),
+    radial-gradient(circle at bottom right,
       rgba(255, 255, 255, 0.12),
-      transparent 28%
-    ),
+      transparent 28%),
     linear-gradient(135deg, #2563eb 0%, #3b82f6 45%, #6366f1 100%);
   color: white;
 }
@@ -175,16 +169,14 @@ body {
 
 .dashboard-main {
   background:
-    radial-gradient(
-      circle at top left,
+    radial-gradient(circle at top left,
       rgba(37, 99, 235, 0.04),
-      transparent 22%
-    ),
+      transparent 22%),
     linear-gradient(180deg, #f8fbff 0%, #f3f6fb 100%);
   padding: 4rem 0 5rem;
 }
 
-.dashboard-section + .dashboard-section {
+.dashboard-section+.dashboard-section {
   margin-top: 2rem;
 }
 
@@ -266,11 +258,9 @@ body {
 }
 
 .info-band {
-  background: linear-gradient(
-    135deg,
-    rgba(37, 99, 235, 0.06),
-    rgba(99, 102, 241, 0.08)
-  );
+  background: linear-gradient(135deg,
+      rgba(37, 99, 235, 0.06),
+      rgba(99, 102, 241, 0.08));
 }
 
 .info-band p {
@@ -350,16 +340,12 @@ body {
   overflow: hidden;
   padding: 4.5rem 0 3rem;
   background:
-    radial-gradient(
-      circle at top left,
+    radial-gradient(circle at top left,
       rgba(255, 255, 255, 0.18),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at bottom right,
+      transparent 30%),
+    radial-gradient(circle at bottom right,
       rgba(255, 255, 255, 0.12),
-      transparent 28%
-    ),
+      transparent 28%),
     linear-gradient(135deg, #2563eb 0%, #3b82f6 45%, #6366f1 100%);
   color: white;
 }
@@ -478,7 +464,6 @@ body {
   }
 }
 
-/* Top results text */
 .results-header {
   font-size: 0.95rem;
   font-weight: 600;
@@ -486,12 +471,10 @@ body {
   margin-bottom: 1.25rem;
 }
 
-/* Grid spacing */
 .card-grid {
   gap: 1.5rem;
 }
 
-/* Main card */
 .card,
 .apartment-card {
   border: 1px solid rgba(229, 231, 235, 0.9);
@@ -516,21 +499,17 @@ body {
   border-color: rgba(37, 99, 235, 0.18);
 }
 
-/* subtle highlight */
 .card::before,
 .apartment-card::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.35),
-    transparent 40%
-  );
+  background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.35),
+      transparent 40%);
   pointer-events: none;
 }
 
-/* Card header row */
 .card-header-custom {
   display: flex;
   justify-content: space-between;
@@ -538,7 +517,6 @@ body {
   margin-bottom: 1rem;
 }
 
-/* City */
 .card-title,
 .apartment-card h5,
 .apartment-card .city-title {
@@ -549,7 +527,6 @@ body {
   color: #1e293b;
 }
 
-/* Year badge */
 .badge-year {
   display: inline-block;
   padding: 0.32rem 0.65rem;
@@ -562,7 +539,6 @@ body {
   margin-top: 0.25rem;
 }
 
-/* Right side amount */
 .amount-box {
   text-align: right;
 }
@@ -582,7 +558,6 @@ body {
   letter-spacing: -0.04em;
 }
 
-/* Info rows */
 .card-info {
   margin-top: 1rem;
   margin-bottom: 1.25rem;
@@ -601,14 +576,12 @@ body {
   font-weight: 700;
 }
 
-/* Buttons row */
 .card-actions {
   display: flex;
   gap: 0.65rem;
   margin-top: 1.2rem;
 }
 
-/* Buttons */
 .btn {
   border-radius: 12px;
   font-size: 0.88rem;
@@ -618,7 +591,6 @@ body {
   box-shadow: none;
 }
 
-/* Favorite button */
 .btn-favorite,
 .favorite-btn {
   background: #eff6ff;
@@ -633,7 +605,6 @@ body {
   transform: translateY(-1px);
 }
 
-/* Compare button */
 .btn-compare {
   background: #ffffff;
   color: #475569;
@@ -647,7 +618,6 @@ body {
   transform: translateY(-1px);
 }
 
-/* Optional accent line */
 .apartment-card::after {
   content: "";
   position: absolute;
@@ -664,7 +634,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-top: 2rem;
-  gap: 1.5rem; /* space between buttons */
+  gap: 1.5rem;
 }
 
 .quiz-actions .btn {
@@ -682,8 +652,8 @@ body {
   box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
 }
 
-/* Better mobile */
 @media (max-width: 768px) {
+
   .card,
   .apartment-card {
     padding: 1.1rem;
@@ -769,6 +739,7 @@ body {
 }
 
 @media (max-width: 768px) {
+
   .chart-wrap,
   .small-chart-wrap {
     min-height: 260px;
@@ -839,6 +810,7 @@ body {
 }
 
 @media (max-width: 768px) {
+
   .chart-wrap,
   .small-chart-wrap {
     min-height: 260px;

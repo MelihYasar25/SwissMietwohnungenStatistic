@@ -34,15 +34,39 @@ function showError(message) {
 }
 
 function renderSummaryCards() {
-  const total = allApartments.length;
-  const uniqueCantons = [...new Set(allApartments.map(item => item[window.CONFIG.COLUMNS.canton]))].length;
-  const avgRooms =
-    allApartments.reduce((sum, item) => sum + (Number(item[window.CONFIG.COLUMNS.rooms]) || 0), 0) / total;
+  const total = allApartments.reduce((s, item) => s + (Number(item.value) || 0), 0);
+  const uniqueCantons = [...new Set(allApartments.map(item => item.canton || item[window.CONFIG?.COLUMNS?.canton] || 'Unknown'))].length;
+  let weightedRoomsSum = 0;
+  let weightTotal = 0;
+
+  allApartments.forEach(item => {
+    const count = Number(item.value) || 0;
+    if (count === 0) return;
+
+    let roomsNum = null;
+    if (item.rooms_code !== undefined) {
+      const n = Number(item.rooms_code);
+      if (!Number.isNaN(n)) roomsNum = n;
+    }
+
+    if (roomsNum === null && (item.rooms || item[window.CONFIG?.COLUMNS?.rooms])) {
+      const label = (item.rooms || item[window.CONFIG?.COLUMNS?.rooms] || '').toString();
+      const m = label.match(/[\d]+(?:[.,]\d+)?/); // captures "2", "2.5", "2,5"
+      if (m) roomsNum = Number(m[0].replace(',', '.'));
+    }
+
+    if (roomsNum === null || Number.isNaN(roomsNum)) return;
+
+    weightedRoomsSum += roomsNum * count;
+    weightTotal += count;
+  });
+
+  const avgRooms = weightTotal > 0 ? (weightedRoomsSum / weightTotal) : 0;
 
   const cards = [
-    { title: 'Entries', value: total, icon: '🏠' },
+    { title: 'Entries', value: total.toLocaleString(), icon: '🏠' },
     { title: 'Cantons', value: uniqueCantons, icon: '🗺️' },
-    { title: 'Ø Rooms', value: avgRooms.toFixed(1), icon: '📐' }
+    { title: 'Ø Rooms', value: avgRooms ? avgRooms.toFixed(1) : '—', icon: '📐' }
   ];
 
   const html = cards.map(card => `
@@ -64,40 +88,24 @@ function renderPopularCantons() {
   const groups = {};
 
   allApartments.forEach(item => {
-    const canton = item[window.CONFIG.COLUMNS.canton] || 'Unknown';
-    if (!groups[canton]) groups[canton] = [];
-    groups[canton].push(item);
+    const canton = item.canton || item[window.CONFIG?.COLUMNS?.canton] || 'Unknown';
+    const value = Number(item.value) || 0;
+    if (!groups[canton]) groups[canton] = 0;
+    groups[canton] += value;
   });
 
   const sortedCantons = Object.entries(groups)
-    .sort(([, a], [, b]) => b.length - a.length)
+    .sort(([, aVal], [, bVal]) => bVal - aVal)
     .slice(0, 5);
 
-  const html = sortedCantons.map(([canton, entries]) => `
+  const html = sortedCantons.map(([canton, sumValue]) => `
     <div class="d-flex justify-content-between align-items-center mb-2">
       <span>${canton}</span>
-      <span class="badge bg-primary">${entries.length}</span>
+      <span class="badge bg-primary">${Number(sumValue).toLocaleString()}</span>
     </div>
   `).join('');
 
   document.getElementById('popular-cantons').innerHTML = html || '<p>No data available</p>';
-}
-
-function renderLatestApartments() {
-  const latest = allApartments.slice(0, 3);
-
-  const html = latest.map(item => `
-    <div class="card mb-3">
-      <div class="card-body">
-        <h6 class="card-title">${item[window.CONFIG.COLUMNS.canton] || 'Unknown Canton'}</h6>
-        <p class="card-text mb-1"><strong>Rooms:</strong> ${item[window.CONFIG.COLUMNS.rooms] ?? '-'}</p>
-        <p class="card-text mb-1"><strong>Price Range:</strong> ${item[window.CONFIG.COLUMNS.price_range] ?? '-'}</p>
-        <p class="card-text"><strong>Area Range:</strong> ${item[window.CONFIG.COLUMNS.area_m2_range] ?? '-'}</p>
-      </div>
-    </div>
-  `).join('');
-
-  document.getElementById('latest-apartments').innerHTML = html || '<p>No data available</p>';
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
