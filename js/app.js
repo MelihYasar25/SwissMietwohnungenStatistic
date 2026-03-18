@@ -108,4 +108,12 @@ function renderPopularCantons() {
   document.getElementById('popular-cantons').innerHTML = html || '<p>No data available</p>';
 }
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log('Service Worker registered', reg))
+      .catch(err => console.error('SW failed', err));
+  });
+}
+
 document.addEventListener('DOMContentLoaded', initApp);
